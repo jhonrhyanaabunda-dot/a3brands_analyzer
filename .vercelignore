@@ -1,0 +1,10 @@
+# Source asset — 151 MB ProRes file used only to re-encode the web assets.
+# Web playback uses saggy_mascot.webm / saggy_mascot.webp instead.
+mascot try.mov
+
+# Orphan / earlier-iteration asset, not referenced by index.html.
+saggy_transparent.webp
+
+# Build/dev junk
+.DS_Store
+*.log

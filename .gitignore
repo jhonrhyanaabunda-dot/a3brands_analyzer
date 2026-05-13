@@ -1,0 +1,14 @@
+# 151 MB ProRes source — exceeds GitHub's 100 MB file limit.
+# Web-playable assets (saggy_mascot.webm / .webp) are encoded from this and committed.
+mascot try.mov
+
+# Orphan / earlier-iteration asset, not referenced by index.html.
+saggy_transparent.webp
+
+# OS junk
+.DS_Store
+
+# Editor / dev junk
+*.log
+.vscode/
+.idea/

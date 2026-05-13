@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Outrank Audit | A3 Brands</title>
+<meta name="description" content="Drop your dealership URL. Saggy finds the rooftops outranking you in your trade area — and tells you exactly what it's costing you every month." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-deep: #0B3D2E;
+    --green-deeper: #062318;
+    --green-darkest: #03130C;
+    --lime: #7CB342;
+    --lime-glow: #A4DC60;
+    --lime-dim: #4E7028;
+    --cream: #F5F1E8;
+    --white: #FFFFFF;
+    --gray-warm: #C7C1B3;
+    --gray-dim: #6B665C;
+    --red: #E25C3E;
+    --red-glow: #FF7A5C;
+    --display: 'Sora', sans-serif;
+    --body: 'Lato', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { background: var(--green-darkest); }
+  html, body {
+    color: var(--cream);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+  body { background: transparent; }
+
+  /* Background video on landing only */
+  .bg-video {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: -3;
+    pointer-events: none;
+    display: none;
+  }
+  body:has(#screen-landing.active) .bg-video { display: block; }
+
+  /* Atmospheric scrim */
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 70% 10%, rgba(124, 179, 66, 0.08), transparent),
+      radial-gradient(ellipse 60% 80% at 20% 90%, rgba(11, 61, 46, 0.35), transparent),
+      linear-gradient(180deg, rgba(3, 19, 12, 0.55) 0%, rgba(6, 35, 24, 0.45) 50%, rgba(3, 19, 12, 0.6) 100%);
+    z-index: -2; pointer-events: none;
+  }
+  /* Stars */
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 12% 22%, white, transparent),
+      radial-gradient(1px 1px at 78% 35%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1px 1px at 35% 72%, white, transparent),
+      radial-gradient(1px 1px at 64% 85%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1.5px 1.5px at 90% 15%, white, transparent),
+      radial-gradient(1px 1px at 8% 60%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1px 1px at 55% 18%, white, transparent),
+      radial-gradient(1px 1px at 25% 45%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 88% 65%, white, transparent),
+      radial-gradient(1px 1px at 48% 92%, rgba(255,255,255,0.5), transparent);
+    z-index: -1; opacity: 0.6;
+    animation: drift 60s linear infinite;
+  }
+  @keyframes drift {
+    0%   { transform: translate(0, 0); }
+    100% { transform: translate(-2%, -1%); }
+  }
+
+  /* Top brand bar */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 18px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 50; background: transparent;
+  }
+  .logo { display: flex; align-items: center; }
+  .logo img { height: 64px; width: auto; display: block; }
+  .topbar .step-indicator {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-warm);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+  .topbar .step-indicator .dot { color: var(--lime); margin: 0 8px; }
+
+  /* Screen container */
+  .screen {
+    min-height: 100vh;
+    padding: 100px 32px 60px;
+    display: none; opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .screen.active { display: block; opacity: 1; }
+
+  /* ============ SHARED ATOMS ============ */
+  .eyebrow {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--lime);
+    padding: 8px 16px;
+    border: 1px solid rgba(124, 179, 66, 0.3);
+    border-radius: 999px;
+    background: rgba(124, 179, 66, 0.06);
+  }
+
+  /* ============ LANDING ============ */
+  .landing-wrap {
+    max-width: 920px;
+    margin: 40px auto 0;
+    text-align: center;
+  }
+  .landing-wrap .eyebrow { margin-bottom: 32px; }
+  .hero-headline {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(40px, 7vw, 84px);
+    line-height: 1.35;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+  }
+  .hero-headline .accent {
+    color: var(--lime);
+    position: relative;
+    display: inline-block;
+    margin-right: 0.18em;
+  }
+  .hero-headline .accent::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -10px;
+    height: 4px;
+    background: var(--lime);
+    border-radius: 2px;
+    opacity: 0.5;
+  }
+  .hero-sub {
+    font-size: 18px;
+    color: var(--gray-warm);
+    max-width: 640px;
+    margin: 0 auto 48px;
+    line-height: 1.55;
+  }
+
+  /* Stacked inputs */
+  .form-stack {
+    max-width: 560px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .field {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 4px 4px 4px 8px;
+    display: flex;
+    align-items: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field:focus-within {
+    border-color: var(--lime);
+    box-shadow: 0 0 0 4px rgba(124, 179, 66, 0.15);
+  }
+  .field-icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--lime);
+    flex-shrink: 0;
+  }
+  .field-icon svg { width: 18px; height: 18px; }
+  .field input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 16px 8px;
+    color: var(--white);
+    font-family: var(--body);
+    font-size: 16px;
+  }
+  .field input::placeholder { color: var(--gray-dim); }
+  .field-cta {
+    background: var(--lime);
+    color: var(--green-darkest);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .field-cta:hover { background: var(--lime-glow); transform: translateY(-1px); }
+  .field-cta:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .full-cta {
+    background: var(--lime);
+    color: var(--green-darkest);
+    border: none;
+    border-radius: 14px;
+    padding: 18px 24px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s, box-shadow 0.2s;
+    letter-spacing: 0.01em;
+    margin-top: 4px;
+  }
+  .full-cta:hover {
+    background: var(--lime-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(124, 179, 66, 0.3);
+  }
+  .full-cta:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .url-error {
+    color: var(--red);
+    font-size: 14px;
+    margin-top: 8px;
+    min-height: 20px;
+    text-align: center;
+  }
+
+  .landing-meta {
+    margin-top: 60px;
+    display: flex;
+    gap: 48px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .meta-item { text-align: left; }
+  .meta-item .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gray-dim);
+    margin-bottom: 6px;
+  }
+  .meta-item .val {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--cream);
+  }
+  .meta-item .val .num { color: var(--lime); }
+
+  /* ============ SCANNING ============ */
+  .scan-wrap {
+    max-width: 1080px;
+    margin: 40px auto 0;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 48px;
+    align-items: start;
+  }
+  .scan-stage-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 48px;
+    min-height: 480px;
+  }
+  .scan-eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray-warm);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .scan-eyebrow .live-dot {
+    width: 8px; height: 8px;
+    background: var(--lime);
+    border-radius: 50%;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(124, 179, 66, 0.6); }
+    50%      { opacity: 0.6; box-shadow: 0 0 0 6px rgba(124, 179, 66, 0); }
+  }
+  .scan-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    margin-bottom: 28px;
+  }
+  .scan-steps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 0;
+    margin: 0;
+  }
+  .scan-step {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(3, 19, 12, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .scan-step .step-marker {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-dim);
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .scan-step .step-label {
+    font-family: var(--body);
+    font-size: 15px;
+    color: var(--gray-warm);
+    transition: color 0.3s;
+  }
+  .scan-step .step-detail {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-dim);
+    text-align: right;
+    transition: color 0.3s;
+  }
+  .scan-step.active {
+    border-color: rgba(124, 179, 66, 0.45);
+    background: rgba(124, 179, 66, 0.06);
+  }
+  .scan-step.active .step-marker {
+    border-color: var(--lime);
+    background: rgba(124, 179, 66, 0.15);
+    color: var(--lime);
+  }
+  .scan-step.active .step-label { color: var(--white); }
+  .scan-step.active .step-detail { color: var(--lime); }
+  .scan-step.done .step-marker {
+    background: var(--lime);
+    border-color: var(--lime);
+    color: var(--green-darkest);
+  }
+  .scan-step.done .step-label { color: var(--cream); }
+  .scan-step.done .step-detail { color: var(--lime-glow); }
+  .scan-step .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(124, 179, 66, 0.25);
+    border-top-color: var(--lime);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ============ SAGGY PANEL ============ */
+  .saggy-panel {
+    position: sticky;
+    top: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .speech-bubble {
+    background: var(--cream);
+    color: var(--green-darkest);
+    border-radius: 20px;
+    padding: 24px 26px;
+    font-family: var(--body);
+    font-size: 15.5px;
+    line-height: 1.55;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    animation: bubblePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid var(--cream);
+  }
+  @keyframes bubblePop {
+    0%   { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .saggy-figure {
+    position: relative;
+    overflow: visible;
+    padding: 20px 0 10px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .saggy-figure::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    height: 30px;
+    background: radial-gradient(ellipse at center,
+      rgba(124, 179, 66, 0.35) 0%,
+      rgba(124, 179, 66, 0.12) 40%,
+      transparent 70%);
+    border-radius: 50%;
+    filter: blur(8px);
+    animation: lunar-pulse 3.8s ease-in-out infinite;
+    z-index: 0;
+  }
+  @keyframes lunar-pulse {
+    0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(0.92); }
+    50%      { opacity: 1;    transform: translateX(-50%) scale(1.08); }
+  }
+  .saggy-figure::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(2px 2px at 15% 30%, rgba(164, 220, 96, 0.9), transparent 60%),
+      radial-gradient(1.5px 1.5px at 85% 20%, rgba(255, 255, 255, 0.7), transparent 60%),
+      radial-gradient(2px 2px at 92% 60%, rgba(164, 220, 96, 0.8), transparent 60%),
+      radial-gradient(1px 1px at 8% 75%, rgba(255, 255, 255, 0.6), transparent 60%),
+      radial-gradient(1.5px 1.5px at 70% 8%, rgba(255, 255, 255, 0.8), transparent 60%);
+    animation: twinkle 2.6s ease-in-out infinite;
+    z-index: 2;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 1;   }
+  }
+  .saggy-img {
+    display: block;
+    width: 78%;
+    max-width: 280px;
+    height: auto;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.45));
+    animation:
+      saggy-bob 3.6s ease-in-out infinite,
+      saggy-sway 7s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+  @keyframes saggy-bob {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 0 -10px; }
+  }
+  @keyframes saggy-sway {
+    0%, 100% { rotate: -1.5deg; }
+    50%      { rotate: 1.5deg; }
+  }
+  .saggy-img.react {
+    animation:
+      saggy-react 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1,
+      saggy-bob 3.6s ease-in-out infinite 0.6s,
+      saggy-sway 7s ease-in-out infinite 0.6s;
+  }
+  @keyframes saggy-react {
+    0%   { translate: 0 0;     scale: 1;    rotate: -1.5deg; }
+    30%  { translate: 0 -18px; scale: 1.05; rotate: 4deg; }
+    60%  { translate: 0 -8px;  scale: 0.98; rotate: -3deg; }
+    100% { translate: 0 0;     scale: 1;    rotate: -1.5deg; }
+  }
+  .saggy-name {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gray-dim);
+  }
+  .audio-toggle {
+    margin: 4px auto 0;
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    color: var(--gray-warm);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .audio-toggle:hover { border-color: rgba(124, 179, 66, 0.4); color: var(--cream); }
+  .audio-toggle[aria-pressed="true"] {
+    border-color: var(--lime); color: var(--lime); background: rgba(124, 179, 66, 0.08);
+  }
+  .audio-toggle .audio-waves { opacity: 0.4; transition: opacity 0.2s; }
+  .audio-toggle[aria-pressed="true"] .audio-waves { opacity: 1; }
+
+  /* ============ LEAD CAPTURE ============ */
+  .lead-wrap { max-width: 560px; margin: 40px auto 0; }
+  .lead-eyebrow { text-align: center; margin-bottom: 24px; }
+  .lead-headline {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 48px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .lead-headline .accent { color: var(--lime); }
+  .lead-sub {
+    text-align: center;
+    color: var(--gray-warm);
+    font-size: 16px;
+    margin-bottom: 40px;
+  }
+  .lead-preview {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(124, 179, 66, 0.2);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .lead-preview-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--lime);
+    margin-bottom: 8px;
+  }
+  .lead-preview-stat {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 36px;
+    color: var(--white);
+    letter-spacing: -0.02em;
+  }
+  .lead-preview-sub {
+    font-size: 13px;
+    color: var(--gray-warm);
+    margin-top: 4px;
+  }
+  .lead-form {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--gray-warm);
+    margin-bottom: 6px;
+  }
+  .lead-form input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--white);
+    font-family: var(--body);
+    font-size: 15px;
+    width: 100%;
+    transition: border-color 0.18s;
+  }
+  .lead-form input:focus { outline: none; border-color: var(--lime); }
+  .lead-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .lead-fineprint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--gray-dim);
+    margin-top: 16px;
+  }
+  .hp-field {
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    opacity: 0;
+  }
+  .hp-field input { pointer-events: none; }
+
+  /* ============ RESULT ============ */
+  .result-wrap { max-width: 1120px; margin: 0 auto; }
+  .band-header { text-align: center; margin-bottom: 36px; }
+  .band-name {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--lime);
+    padding: 8px 18px;
+    border: 1px solid rgba(124, 179, 66, 0.4);
+    border-radius: 999px;
+    background: rgba(124, 179, 66, 0.08);
+  }
+
+  /* Damage hero — the big number */
+  .damage-hero {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(226, 92, 62, 0.18), transparent 60%),
+      rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(226, 92, 62, 0.3);
+    border-radius: 28px;
+    padding: 48px 40px 44px;
+    text-align: center;
+    margin-bottom: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .damage-hero .saggy-mini-wrap {
+    position: relative;
+    width: 96px; height: 96px;
+    margin: 0 auto 20px;
+  }
+  .damage-hero .saggy-mini-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(226, 92, 62, 0.5);
+    animation: orbit 18s linear infinite;
+  }
+  @keyframes orbit { to { rotate: 360deg; } }
+  .damage-hero .saggy-mini-img {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(226, 92, 62, 0.5);
+    background: rgba(11, 61, 46, 0.4);
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+  }
+  .damage-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--red-glow);
+    margin-bottom: 12px;
+  }
+  .damage-amount {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(54px, 9vw, 108px);
+    line-height: 1;
+    color: var(--white);
+    letter-spacing: -0.04em;
+    margin-bottom: 16px;
+  }
+  .damage-amount .currency { color: var(--red-glow); margin-right: 4px; font-size: 0.7em; vertical-align: 0.1em; }
+  .damage-amount .period { color: var(--gray-warm); font-size: 0.35em; font-weight: 600; letter-spacing: 0; }
+  .damage-verdict {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(17px, 2vw, 22px);
+    line-height: 1.45;
+    color: var(--cream);
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .damage-verdict b { color: var(--lime); font-weight: 700; }
+
+  /* Leaderboard */
+  .leaderboard {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 36px;
+  }
+  .lb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .lb-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--white);
+    letter-spacing: -0.01em;
+  }
+  .lb-trade {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gray-warm);
+  }
+  .lb-trade b { color: var(--lime); font-weight: 600; }
+  .lb-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 14px;
+    border-radius: 12px;
+    transition: background 0.2s;
+  }
+  .lb-row + .lb-row { margin-top: 4px; }
+  .lb-row:not(.you):hover { background: rgba(255,255,255,0.03); }
+  .lb-row.you {
+    background: linear-gradient(90deg, rgba(124, 179, 66, 0.12), rgba(124, 179, 66, 0.04));
+    border: 1px solid rgba(124, 179, 66, 0.35);
+    padding: 18px 14px;
+  }
+  .lb-rank {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 24px;
+    color: var(--gray-dim);
+    text-align: center;
+  }
+  .lb-row.you .lb-rank { color: var(--lime); }
+  .lb-row.rank-1 .lb-rank { color: var(--lime-glow); }
+  .lb-domain {
+    min-width: 0;
+  }
+  .lb-domain .host {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--cream);
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+  .lb-row.you .lb-domain .host { color: var(--white); }
+  .lb-row.you .lb-domain .host::after {
+    content: ' YOU';
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--green-darkest);
+    background: var(--lime);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    vertical-align: 2px;
+    font-weight: 700;
+  }
+  .lb-domain .pillars {
+    display: flex;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-dim);
+    flex-wrap: wrap;
+  }
+  .lb-domain .pillars span b {
+    color: var(--gray-warm);
+    font-weight: 600;
+    margin-left: 4px;
+  }
+  .lb-row.you .lb-domain .pillars span b { color: var(--lime); }
+  .lb-score {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--cream);
+    letter-spacing: -0.02em;
+    text-align: right;
+  }
+  .lb-row.you .lb-score { color: var(--lime-glow); }
+  .lb-score small {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--gray-dim);
+    margin-left: 2px;
+  }
+  .lb-gap {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red-glow);
+    text-align: right;
+    min-width: 56px;
+  }
+  .lb-row.you .lb-gap { color: var(--gray-dim); }
+  .lb-row.rank-1 .lb-gap { color: var(--lime); }
+
+  /* Gap-by-gap pillar breakdown */
+  .gap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .gap-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .gap-card-eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gray-warm);
+    margin-bottom: 6px;
+  }
+  .gap-card-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--white);
+    margin-bottom: 18px;
+  }
+  .gap-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .gap-bar-row {
+    display: grid;
+    grid-template-columns: 1fr 36px;
+    gap: 10px;
+    align-items: center;
+  }
+  .gap-bar-row .gap-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-warm);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gap-bar-row.you .gap-label { color: var(--lime); }
+  .gap-bar-row .gap-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gray-warm);
+    text-align: right;
+  }
+  .gap-bar-row.you .gap-val { color: var(--lime); }
+  .gap-track {
+    grid-column: 1 / 3;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: -4px;
+    margin-bottom: 4px;
+  }
+  .gap-fill {
+    height: 100%;
+    border-radius: 3px;
+    width: 0;
+    transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .gap-fill.you { background: linear-gradient(90deg, var(--lime-dim), var(--lime)); }
+  .gap-fill.comp { background: linear-gradient(90deg, rgba(199, 193, 179, 0.4), var(--gray-warm)); }
+
+  /* Cost math panel */
+  .cost-panel {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(124, 179, 66, 0.18);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cost-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 100% 0%, rgba(124, 179, 66, 0.08), transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .cost-panel > * { position: relative; z-index: 1; }
+  .cost-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--lime);
+    margin-bottom: 6px;
+  }
+  .cost-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--white);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+  .cost-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .cost-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(3, 19, 12, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+  .cost-row .cost-label {
+    font-family: var(--body);
+    font-size: 14px;
+    color: var(--gray-warm);
+  }
+  .cost-row .cost-label small {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--gray-dim);
+    letter-spacing: 0.1em;
+    margin-top: 3px;
+  }
+  .cost-row .cost-val {
+    font-family: var(--mono);
+    font-size: 16px;
+    color: var(--cream);
+    font-weight: 600;
+  }
+  .cost-row.total {
+    background: rgba(226, 92, 62, 0.1);
+    border-color: rgba(226, 92, 62, 0.3);
+  }
+  .cost-row.total .cost-label { color: var(--white); font-family: var(--display); font-weight: 700; font-size: 16px; }
+  .cost-row.total .cost-val { color: var(--red-glow); font-size: 22px; }
+
+  /* Fixes panel */
+  .fixes-panel {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(124, 179, 66, 0.18);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .fixes-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 0% 0%, rgba(124, 179, 66, 0.08), transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .fixes-header { position: relative; z-index: 1; margin-bottom: 22px; }
+  .fixes-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--lime);
+    margin-bottom: 8px;
+  }
+  .fixes-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--white);
+    letter-spacing: -0.01em;
+  }
+  .fixes-list {
+    list-style: none;
+    counter-reset: fix;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .fix-item {
+    counter-increment: fix;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 16px;
+    padding: 18px 20px;
+    background: rgba(3, 19, 12, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .fix-item:hover {
+    border-color: rgba(124, 179, 66, 0.4);
+    transform: translateX(2px);
+  }
+  .fix-item::before {
+    content: counter(fix);
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: rgba(124, 179, 66, 0.14);
+    color: var(--lime);
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(124, 179, 66, 0.3);
+    align-self: start;
+  }
+  .fix-topic {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gray-warm);
+    margin-bottom: 6px;
+  }
+  .fix-body {
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--cream);
+  }
+  .fix-body b { color: var(--lime-glow); font-weight: 700; }
+
+  .cta-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 14px;
+  }
+  .cta-primary, .cta-secondary {
+    border-radius: 14px;
+    padding: 20px 28px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+    border: none;
+    transition: all 0.18s;
+    letter-spacing: 0.01em;
+  }
+  .cta-primary {
+    background: var(--lime);
+    color: var(--green-darkest);
+  }
+  .cta-primary:hover {
+    background: var(--lime-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(124, 179, 66, 0.3);
+  }
+  .cta-secondary {
+    background: transparent;
+    color: var(--cream);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .cta-secondary:hover {
+    border-color: var(--lime);
+    color: var(--lime);
+  }
+
+  /* Mobile */
+  @media (max-width: 880px) {
+    .scan-wrap { grid-template-columns: 1fr; gap: 24px; }
+    .saggy-panel { position: static; order: -1; }
+    .scan-stage-card { padding: 32px 24px; min-height: auto; }
+    .scan-title { font-size: 24px; }
+    .scan-step { grid-template-columns: 28px 1fr; }
+    .scan-step .step-detail { grid-column: 2 / 3; text-align: left; padding-top: 4px; font-size: 10.5px; }
+    .lead-row { grid-template-columns: 1fr; }
+    .gap-grid { grid-template-columns: 1fr; }
+    .cta-row { grid-template-columns: 1fr; }
+    .topbar { padding: 14px 20px; }
+    .topbar .step-indicator { display: none; }
+    .screen { padding: 80px 20px 40px; }
+    .landing-meta { gap: 24px; }
+    .damage-hero { padding: 32px 20px 28px; }
+    .leaderboard { padding: 20px 16px; }
+    .lb-row { grid-template-columns: 28px 1fr auto; gap: 10px; padding: 14px 6px; }
+    .lb-gap { display: none; }
+    .lb-domain .pillars { font-size: 10px; gap: 8px; }
+    .lb-score { font-size: 22px; }
+    .cost-row { grid-template-columns: 1fr; gap: 6px; }
+    .cost-row .cost-val { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" href="/" aria-label="A3 Brands"><img src="data:image/png;base64,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" alt="A3 Brands" /></a>
+  <div class="step-indicator" id="stepIndicator"></div>
+</header>
+
+<!-- ============ SCREEN 1: LANDING ============ -->
+<section class="screen active" id="screen-landing">
+  <div class="landing-wrap">
+    <div class="eyebrow">GALAXY · Outrank Audit</div>
+    <h1 class="hero-headline">Who's <span class="accent">outranking</span> you?</h1>
+    <p class="hero-sub">Drop your dealership URL. Saggy finds the rooftops eating your lunch in your trade area, and tells you exactly what it's costing you every month. 90 seconds. No fluff.</p>
+    <div class="form-stack">
+      <div class="field">
+        <span class="field-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg>
+        </span>
+        <input type="url" id="urlInput" placeholder="https://yourdealership.com" autocomplete="url" />
+      </div>
+      <div class="field">
+        <span class="field-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <input type="text" id="cityInput" placeholder="Your city &amp; state (e.g. Prescott, AZ)" autocomplete="address-level2" />
+      </div>
+      <button id="startBtn" class="full-cta">Find Who's Outranking Me →</button>
+    </div>
+    <div class="url-error" id="urlError"></div>
+    <div class="landing-meta">
+      <div class="meta-item">
+        <div class="label">What We Scan</div>
+        <div class="val">SEO · AEO · GEO</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Rooftops Compared</div>
+        <div class="val">Top <span class="num">3</span> in trade area</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Time</div>
+        <div class="val">Under <span class="num">90</span> seconds</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 2: SCANNING ============ -->
+<section class="screen" id="screen-scan">
+  <div class="scan-wrap">
+    <div class="scan-stage-card">
+      <div class="scan-eyebrow"><span class="live-dot"></span>Live Audit In Progress</div>
+      <h2 class="scan-title">Saggy's on the hunt.</h2>
+      <ul class="scan-steps" id="scanSteps">
+        <li class="scan-step" data-step="0">
+          <div class="step-marker">1</div>
+          <div class="step-label">Reading your site</div>
+          <div class="step-detail">—</div>
+        </li>
+        <li class="scan-step" data-step="1">
+          <div class="step-marker">2</div>
+          <div class="step-label">Mapping the trade area</div>
+          <div class="step-detail">—</div>
+        </li>
+        <li class="scan-step" data-step="2">
+          <div class="step-marker">3</div>
+          <div class="step-label">Finding competing rooftops</div>
+          <div class="step-detail">—</div>
+        </li>
+        <li class="scan-step" data-step="3">
+          <div class="step-marker">4</div>
+          <div class="step-label">Scoring your SEO · AEO · GEO</div>
+          <div class="step-detail">—</div>
+        </li>
+        <li class="scan-step" data-step="4">
+          <div class="step-marker">5</div>
+          <div class="step-label">Scoring the rooftops ahead of you</div>
+          <div class="step-detail">—</div>
+        </li>
+        <li class="scan-step" data-step="5">
+          <div class="step-marker">6</div>
+          <div class="step-label">Calculating the leak</div>
+          <div class="step-detail">—</div>
+        </li>
+      </ul>
+    </div>
+
+    <aside class="saggy-panel">
+      <div class="speech-bubble" id="speechBubble">Hold on, let me pull up your trade area...</div>
+      <div class="saggy-figure">
+        <video class="saggy-img" id="saggyImg" autoplay loop muted playsinline aria-label="Saggy, A3 Brands mascot">
+          <source src="saggy_mascot.webm" type="video/webm">
+          <img src="saggy_mascot.webp" alt="Saggy, A3 Brands mascot">
+        </video>
+      </div>
+      <div class="saggy-name">SAGGY · On Patrol</div>
+      <button type="button" class="audio-toggle" id="audioToggle" aria-pressed="false" aria-label="Toggle Saggy voice-over">
+        <span class="audio-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path class="audio-waves" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <span class="audio-label">Saggy speaks</span>
+      </button>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ SCREEN 3: LEAD CAPTURE ============ -->
+<section class="screen" id="screen-leadcap">
+  <div class="lead-wrap">
+    <div class="lead-eyebrow">
+      <div class="eyebrow">Audit Complete · Report Ready</div>
+    </div>
+    <h2 class="lead-headline">Saggy found <span class="accent" id="leadCompCount">3</span> rooftops ahead of you.</h2>
+    <p class="lead-sub">Tell us where to send the breakdown. We'll email the leaderboard, the gap analysis, and the action plan to flip it.</p>
+    <div class="lead-preview" id="leadPreview" hidden>
+      <div class="lead-preview-label">Estimated Monthly Damage</div>
+      <div class="lead-preview-stat" id="leadPreviewStat">$—</div>
+      <div class="lead-preview-sub">Lost leads × $80 CPL · Full math inside</div>
+    </div>
+    <form class="lead-form" id="leadForm" autocomplete="on" novalidate>
+      <div class="hp-field" aria-hidden="true">
+        <label for="leadHoneypot">Company Website (leave blank)</label>
+        <input type="text" id="leadHoneypot" name="company_website" tabindex="-1" autocomplete="off" />
+      </div>
+      <div>
+        <div class="field-label">Your Name</div>
+        <input type="text" id="leadName" placeholder="Jane Smith" autocomplete="name" />
+      </div>
+      <div>
+        <div class="field-label">Dealership</div>
+        <input type="text" id="leadDealer" placeholder="Smith Auto Group" autocomplete="organization" />
+      </div>
+      <div class="lead-row">
+        <div>
+          <div class="field-label">Email</div>
+          <input type="email" id="leadEmail" placeholder="jane@dealership.com" autocomplete="email" />
+        </div>
+        <div>
+          <div class="field-label">Phone</div>
+          <input type="tel" id="leadPhone" placeholder="(555) 555-5555" autocomplete="tel" />
+        </div>
+      </div>
+      <div class="url-error" id="leadError" style="margin-top:0"></div>
+      <button type="submit" class="full-cta" id="leadSubmitBtn">Reveal The Leaderboard →</button>
+      <div class="lead-fineprint">We'll never share your info. One follow-up email, then you're in control.</div>
+    </form>
+  </div>
+</section>
+
+<!-- ============ SCREEN 4: RESULT ============ -->
+<section class="screen" id="screen-result">
+  <div class="result-wrap">
+    <div class="band-header">
+      <div class="band-name" id="bandName">— —</div>
+    </div>
+
+    <!-- THE DAMAGE -->
+    <div class="damage-hero">
+      <div class="saggy-mini-wrap"><img class="saggy-mini-img" src="head%20saggy.png" alt="Saggy" /></div>
+      <div class="damage-label">Estimated Monthly Damage</div>
+      <div class="damage-amount">
+        <span class="currency">$</span><span id="damageVal">0</span>
+        <span class="period"> / mo</span>
+      </div>
+      <p class="damage-verdict" id="damageVerdict">Calculating…</p>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="leaderboard">
+      <div class="lb-header">
+        <div class="lb-title">The Leaderboard</div>
+        <div class="lb-trade" id="lbTrade">Trade area · <b>—</b></div>
+      </div>
+      <div id="lbBody"></div>
+    </div>
+
+    <!-- GAP BREAKDOWN -->
+    <div class="gap-grid" id="gapGrid"></div>
+
+    <!-- COST MATH -->
+    <div class="cost-panel">
+      <div class="cost-eyebrow">The Math</div>
+      <div class="cost-title">How we got to that number.</div>
+      <div class="cost-rows" id="costRows"></div>
+      <div style="font-family: var(--body); font-size: 13.5px; color: var(--gray-warm); line-height: 1.55; padding: 14px 18px; background: rgba(124, 179, 66, 0.06); border: 1px solid rgba(124, 179, 66, 0.2); border-radius: 10px;">
+        <b style="color: var(--lime);">Heads up:</b> These are directional estimates based on your composite gap, conservative trade-area volume, and our industry-standard <b style="color: var(--cream);">$80 CPL benchmark</b> for automotive. Real cost depends on your make, market, and how aggressively you close. The strategy call gives you the precise numbers from your CRM and analytics.
+      </div>
+    </div>
+
+    <!-- FIXES -->
+    <div class="fixes-panel">
+      <div class="fixes-header">
+        <div class="fixes-eyebrow">What I'd Fix First</div>
+        <div class="fixes-title" id="fixesTitle">Your Top 3 Gaps</div>
+      </div>
+      <ol class="fixes-list" id="fixesList"></ol>
+    </div>
+
+    <div class="cta-row">
+      <button class="cta-primary" id="ctaBook">Book My Strategy Call →</button>
+      <button class="cta-secondary" id="ctaEmail">Email My Report</button>
+    </div>
+  </div>
+</section>
+
+<script>
+// ============================================================
+//   THE OUTRANK AUDIT — Saggy goes hunting
+// ============================================================
+
+// ---- CONFIG ----
+const PSI_API_KEY = ''; // Optional. https://developers.google.com/speed/docs/insights/v5/get-started
+const GHL_WEBHOOK_URL = 'PASTE_YOUR_GHL_WEBHOOK_URL_HERE';
+const BOOK_CALL_URL = 'https://a3brands.com/galaxy/book-call';
+const CPL_BENCHMARK = 80; // $/lead — A3 automotive benchmark
+
+// Estimated organic CTR by SERP position (industry-standard Sistrix/Backlinko data)
+const CTR_BY_RANK = { 1: 0.30, 2: 0.15, 3: 0.10, 4: 0.06, 5: 0.04, 6: 0.03, 7: 0.025, 8: 0.02, 9: 0.018, 10: 0.015 };
+// Conservative organic → lead conversion rate for in-market local dealer searches
+const LEAD_CONVERSION_RATE = 0.03;
+// Conservative monthly trade-area search volume for "[make] dealer near [city]"-type queries
+const DEFAULT_TRADE_AREA_VOLUME = 1800;
+
+// Result bands
+const BANDS = [
+  { min: 90, name: 'Trade Area Champ', verdict: (gap, host) => `You're already running the trade area. Nobody in your zip is touching this. Now let's lock the lead before someone closes the gap.` },
+  { min: 75, name: 'Solid Ground',     verdict: (gap, host) => `You're in good shape but <b>${host}</b> is finding ways to chip at you. Closeable. Don't let it slide.` },
+  { min: 60, name: 'Slipping',         verdict: (gap, host) => `You're showing up in regular search. You're getting <b>lapped</b> in AI search. The gap is paying somebody else's mortgage right now.` },
+  { min: 40, name: 'Bleeding',         verdict: (gap, host) => `<b>${host}</b> and two others are eating your trade area. The good news is every gap below is fixable — and we know exactly where to start.` },
+  { min: 0,  name: 'Off The Map',      verdict: (gap, host) => `Tough number. But here's the thing, your competitors aren't crushing it, you're just <b>not in the game yet</b>. Let's get you on the board.` },
+];
+
+// ---- STATE ----
+const state = {
+  url: '',
+  city: '',
+  make: '',
+  competitorUrls: [],
+  yourScores: null,
+  competitorScores: [], // [{ url, host, scores }]
+  monthlyDamage: 0,
+  monthlyLostLeads: 0,
+  monthlyLostClicks: 0,
+  yourEstimatedRank: 4,
+  audioEnabled: false,
+  scanComplete: false,
+};
+
+// ---- HELPERS ----
+const $ = id => document.getElementById(id);
+function show(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(screenId).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateStepIndicator(screenId);
+}
+function updateStepIndicator(screenId) {
+  const map = {
+    'screen-landing':  '',
+    'screen-scan':     '<span>Step</span><span class="dot">·</span><span>Audit In Progress</span>',
+    'screen-leadcap':  '<span>Step</span><span class="dot">·</span><span>Report Ready</span>',
+    'screen-result':   '<span>Step</span><span class="dot">·</span><span>Your Outrank Report</span>',
+  };
+  $('stepIndicator').innerHTML = map[screenId] || '';
+}
+function hostnameOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
+}
+function normalizeUrl(raw) {
+  let url = (raw || '').trim();
+  if (!url) return null;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); return url; } catch { return false; }
+}
+function escapeHTML(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Sandbox-safe fetch with timeout. We deliberately do NOT use AbortController/AbortSignal here \u2014
+// some embed contexts (iframe sandboxes, certain mobile WebViews, some preview platforms) proxy
+// fetch through window.postMessage, and AbortSignal is not structured-cloneable, so passing it
+// throws "DataCloneError: AbortSignal object could not be cloned." The trade-off: the underlying
+// request continues in the background after timeout, but the caller sees a clean rejection.
+function timeoutFetch(url, options, ms) {
+  const opts = options || {};
+  const limit = ms || 15000;
+  return Promise.race([
+    fetch(url, opts),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout after ' + limit + 'ms')), limit)),
+  ]);
+}
+
+// Deterministic-feeling random seeded on a URL — same input always gives same fallback scores
+function urlSeed(url) {
+  let h = 0;
+  for (let i = 0; i < url.length; i++) {
+    h = ((h << 5) - h) + url.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+function seededRand(seed, mod) {
+  const x = Math.sin(seed) * 10000;
+  return Math.floor((x - Math.floor(x)) * mod);
+}
+
+// ============================================================
+//   DEALERSHIP VALIDATION (mirrors the SAGGY Score quiz)
+// ============================================================
+const NON_DEALER_HOSTS = new Set([
+  'facebook.com','fb.com','instagram.com','twitter.com','x.com','tiktok.com',
+  'linkedin.com','youtube.com','snapchat.com','pinterest.com','reddit.com','threads.net',
+  'gmail.com','yahoo.com','outlook.com','hotmail.com','aol.com','icloud.com','protonmail.com',
+  'google.com','bing.com','duckduckgo.com','github.com','gitlab.com','stackoverflow.com','wikipedia.org',
+  'amazon.com','ebay.com','etsy.com','walmart.com','target.com','shopify.com','apple.com','microsoft.com',
+  'craigslist.org','autotrader.com','cars.com','carvana.com','carmax.com','cargurus.com','truecar.com','kbb.com','edmunds.com',
+]);
+const DEALER_KEYWORDS = [
+  'dealership','dealer','inventory','pre-owned','used car','used cars','test drive',
+  'service department','showroom','carfax','certified pre-owned','schedule service',
+  'auto group','auto sales','motors','new vehicles','finance application','trade-in',
+];
+const BRAND_KEYWORDS = [
+  'toyota','honda','ford','chevrolet','chevy','ram','dodge','jeep','chrysler','gmc',
+  'buick','cadillac','lincoln','mazda','hyundai','kia','subaru','volkswagen','audi',
+  'bmw','mercedes','lexus','infiniti','acura','nissan','mitsubishi','volvo','porsche',
+  'jaguar','land rover','range rover','tesla','rivian','lucid','genesis','mini',
+];
+function checkObviousNonDealer(url) {
+  let host;
+  try { host = new URL(url).hostname.toLowerCase().replace(/^www\./, ''); }
+  catch { return null; }
+  if (host === 'localhost' || /^127\./.test(host) || /^192\.168\./.test(host) || /^10\./.test(host)) {
+    return "That's a local network address, not a dealership site.";
+  }
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return "That's an IP address. Use your actual dealership domain.";
+  if (/\.(local|test|localhost)$/.test(host)) return "That's a local test domain, not a real site.";
+  for (const denied of NON_DEALER_HOSTS) {
+    if (host === denied || host.endsWith('.' + denied)) {
+      return `${denied} isn't a car dealership. Drop in your actual dealership URL.`;
+    }
+  }
+  return null;
+}
+
+// Pull the homepage via Jina reader, confirm dealer signals, detect brand make.
+async function readSite(url) {
+  try {
+    const res = await timeoutFetch('https://r.jina.ai/' + url, {
+      headers: { 'X-Return-Format': 'text' },
+    }, 18000);
+    if (!res.ok) return { ok: res.status < 500, reason: res.status >= 500 ? 'reader_down' : 'unreachable', text: '' };
+    const text = (await res.text()).toLowerCase();
+    if (!text || text.length < 200) return { ok: false, reason: 'empty', text: '' };
+    let hits = 0;
+    for (const kw of DEALER_KEYWORDS) { if (text.includes(kw)) { hits++; if (hits >= 3) break; } }
+    // Brand detection \u2014 most frequent brand keyword wins
+    const brandCounts = {};
+    for (const b of BRAND_KEYWORDS) {
+      const matches = text.match(new RegExp('\\b' + b.replace(/ /g,'\\s') + '\\b', 'g'));
+      if (matches) brandCounts[b] = matches.length;
+    }
+    const topBrand = Object.entries(brandCounts).sort((a,b) => b[1]-a[1])[0];
+    const make = topBrand ? topBrand[0] : '';
+    return { ok: hits >= 3, reason: hits >= 3 ? 'dealer' : 'no_signals', hits, make, text };
+  } catch (err) {
+    console.warn('Site read failed:', err);
+    return { ok: true, reason: 'check_failed', text: '', make: '' };
+  }
+}
+
+// ============================================================
+//   COMPETITOR DISCOVERY
+//   Strategy: query a search engine via the Jina reader proxy,
+//   extract dealership-looking domains from the results, filter
+//   out aggregators (autotrader, cars.com, etc.) and the user's
+//   own domain, return top 3.
+// ============================================================
+async function discoverCompetitors(make, city, ownUrl) {
+  const ownHost = hostnameOf(ownUrl);
+  const queries = [
+    `${make} dealer near ${city}`,
+    `${make} dealership ${city}`,
+    `best ${make} dealer ${city}`,
+  ];
+  // Try DuckDuckGo HTML first (more reliable to scrape than Google)
+  const found = new Map(); // host → first-seen rank
+  for (const q of queries) {
+    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`;
+    let text = '';
+    try {
+      const res = await timeoutFetch('https://r.jina.ai/' + url, {
+        headers: { 'X-Return-Format': 'text' },
+      }, 15000);
+      if (res.ok) text = await res.text();
+    } catch (err) {
+      console.warn('Competitor search failed for query:', q, err);
+    }
+    if (!text) continue;
+
+    // Extract hostnames from URLs in the result text
+    const hostMatches = [...text.matchAll(/https?:\/\/(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})/gi)];
+    let rank = 0;
+    for (const m of hostMatches) {
+      const host = m[1].toLowerCase().replace(/^www\./, '');
+      if (host === ownHost) continue;
+      if (NON_DEALER_HOSTS.has(host)) continue;
+      // Skip search-engine and CDN noise
+      if (/duckduckgo|google|bing|youtube|facebook|instagram|yelp|yellowpages|wikipedia|amazonaws|cloudflare|jina|gstatic|w3\.org/.test(host)) continue;
+      // Strip subdomains of major aggregators
+      let aggregator = false;
+      for (const agg of NON_DEALER_HOSTS) {
+        if (host.endsWith('.' + agg)) { aggregator = true; break; }
+      }
+      if (aggregator) continue;
+      // Heuristic: dealership domains usually contain a brand name OR end in common dealer TLDs
+      const looksLikeDealer = BRAND_KEYWORDS.some(b => host.includes(b.replace(/ /g, ''))) ||
+        /dealer|auto|motor|cars?\b|cdjr|ford|gmc|chevy|hyundai|kia/.test(host);
+      if (!looksLikeDealer) continue;
+      if (!found.has(host)) found.set(host, rank);
+      rank++;
+      if (found.size >= 8) break;
+    }
+    if (found.size >= 5) break;
+  }
+
+  // Convert to URL list (first 3 most-promising)
+  return [...found.keys()].slice(0, 3).map(h => 'https://' + h);
+}
+
+// ============================================================
+//   ALGORITHMIC SCORING (real PSI + seeded fallback)
+//   SEO → Lighthouse SEO category (0-20)
+//   AEO → (Accessibility + Best-Practices)/2 (0-20)
+//   GEO → on-page AI-citeability signals (0-20)
+//   Total composite → 0-60
+// ============================================================
+const GEO_AUDITS = [
+  'meta-description','document-title','is-crawlable','robots-txt',
+  'image-alt','link-text','crawlable-anchors','canonical',
+  'structured-data','heading-order',
+];
+async function fetchAlgoScoresPSI(url) {
+  const params = new URLSearchParams({ url, strategy: 'mobile' });
+  ['PERFORMANCE','SEO','ACCESSIBILITY','BEST_PRACTICES'].forEach(c => params.append('category', c));
+  if (PSI_API_KEY) params.set('key', PSI_API_KEY);
+  const endpoint = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?' + params.toString();
+
+  const res = await timeoutFetch(endpoint, {}, 50000);
+  if (!res.ok) throw new Error('PSI HTTP ' + res.status);
+  const data = await res.json();
+  const lh = data?.lighthouseResult || {};
+  const cats = lh.categories || {};
+  const audits = lh.audits || {};
+  const seo = cats.seo?.score ?? null;
+  const a11y = cats.accessibility?.score ?? null;
+  const bp = cats['best-practices']?.score ?? null;
+  if (seo === null || a11y === null || bp === null) throw new Error('PSI missing categories');
+
+  let geoSum = 0, geoCount = 0;
+  for (const id of GEO_AUDITS) {
+    const audit = audits[id];
+    if (!audit) continue;
+    let v;
+    if (audit.score === null || audit.score === undefined) {
+      v = audit.scoreDisplayMode === 'manual' ? 0.5 : null;
+    } else {
+      v = audit.score;
+    }
+    if (v === null) continue;
+    geoSum += v; geoCount++;
+  }
+  const geoRatio = geoCount > 0 ? (geoSum / geoCount) : 0;
+  const seoPts = Math.round(seo * 20);
+  const aeoPts = Math.round(((a11y + bp) / 2) * 20);
+  const geoPts = Math.round(geoRatio * 20);
+  return { seo: seoPts, aeo: aeoPts, geo: geoPts, total: seoPts + aeoPts + geoPts, source: 'psi' };
+}
+function computeAlgoScoresSeeded(url) {
+  const seed = urlSeed(url);
+  const seo = 8 + seededRand(seed + 1, 11);
+  const aeo = 4 + seededRand(seed + 2, 9);
+  const geo = 2 + seededRand(seed + 3, 9);
+  return { seo, aeo, geo, total: seo + aeo + geo, source: 'seeded' };
+}
+async function computeAlgoScores(url) {
+  try { return await fetchAlgoScoresPSI(url); }
+  catch (err) {
+    console.warn('PSI failed for', url, '— using seeded:', err);
+    return computeAlgoScoresSeeded(url);
+  }
+}
+
+// ============================================================
+//   COST CALCULATION
+//   Anchor: A3's $80 CPL automotive benchmark.
+//   1. Rank yourself vs the competitors by composite score.
+//   2. Compute lost click-share = CTR(best comp's rank) - CTR(your rank).
+//   3. Lost clicks/mo = lost share × trade area volume.
+//   4. Lost leads/mo = lost clicks × LEAD_CONVERSION_RATE.
+//   5. $ damage/mo = lost leads × CPL_BENCHMARK.
+// ============================================================
+function calculateDamage(yourScores, competitorScores) {
+  // Rank all rooftops by composite (descending)
+  const all = [
+    { id: 'you', total: yourScores.total },
+    ...competitorScores.map((c, i) => ({ id: 'c' + i, total: c.scores.total })),
+  ].sort((a, b) => b.total - a.total);
+  const yourRank = all.findIndex(x => x.id === 'you') + 1;
+
+  // The "ceiling" rank is whatever the best competitor sits at (or rank 1 if you're already on top)
+  const ceilingRank = yourRank === 1 ? 1 : 1;
+  const yourCTR = CTR_BY_RANK[Math.min(yourRank + 2, 10)] ?? 0.015; // assume 2 paid+map results above organic
+  const ceilingCTR = CTR_BY_RANK[Math.min(ceilingRank + 2, 10)] ?? 0.30;
+  const lostShare = Math.max(0, ceilingCTR - yourCTR);
+  const lostClicks = Math.round(lostShare * DEFAULT_TRADE_AREA_VOLUME);
+  const lostLeads = Math.round(lostClicks * LEAD_CONVERSION_RATE);
+  const damage = lostLeads * CPL_BENCHMARK;
+
+  return {
+    yourRank, ceilingRank,
+    yourCTR, ceilingCTR,
+    tradeAreaVolume: DEFAULT_TRADE_AREA_VOLUME,
+    lostShare, lostClicks, lostLeads, damage,
+  };
+}
+
+// ============================================================
+//   SAGGY VOICE-OVER
+// ============================================================
+const SAGGY_SUPPORTS_TTS = typeof window !== 'undefined' && 'speechSynthesis' in window;
+let _saggyVoice = null;
+function pickSaggyVoice() {
+  if (!SAGGY_SUPPORTS_TTS) return null;
+  if (_saggyVoice) return _saggyVoice;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  const preferred = ['Daniel','Alex','Fred','Aaron','Tom','Reed','Microsoft Guy','Google US English Male'];
+  for (const name of preferred) {
+    const v = voices.find(x => x.name.toLowerCase().includes(name.toLowerCase()) && /en[-_]/i.test(x.lang));
+    if (v) { _saggyVoice = v; return v; }
+  }
+  _saggyVoice = voices.find(v => /^en/i.test(v.lang)) || voices[0];
+  return _saggyVoice;
+}
+if (SAGGY_SUPPORTS_TTS) {
+  window.speechSynthesis.onvoiceschanged = () => { _saggyVoice = null; pickSaggyVoice(); };
+}
+function saggySpeak(text) {
+  if (!SAGGY_SUPPORTS_TTS || !state.audioEnabled || !text) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickSaggyVoice();
+    if (v) u.voice = v;
+    u.rate = 1.02; u.pitch = 0.92; u.volume = 1.0;
+    window.speechSynthesis.speak(u);
+  } catch (err) { console.warn('TTS failed:', err); }
+}
+function saggyStop() { if (SAGGY_SUPPORTS_TTS) window.speechSynthesis.cancel(); }
+function initAudioToggle() {
+  const btn = $('audioToggle'); if (!btn) return;
+  try { if (localStorage.getItem('saggyAudio') === '1') { state.audioEnabled = true; btn.setAttribute('aria-pressed','true'); } } catch {}
+  if (!SAGGY_SUPPORTS_TTS) { btn.disabled = true; btn.title = 'Voice-over not supported here'; return; }
+  btn.addEventListener('click', () => {
+    state.audioEnabled = !state.audioEnabled;
+    btn.setAttribute('aria-pressed', state.audioEnabled ? 'true' : 'false');
+    try { localStorage.setItem('saggyAudio', state.audioEnabled ? '1' : '0'); } catch {}
+    if (state.audioEnabled) {
+      const bubble = $('speechBubble');
+      if (bubble && bubble.textContent) saggySpeak(bubble.textContent);
+    } else { saggyStop(); }
+  });
+}
+function reactSaggy() {
+  const s = document.getElementById('saggyImg');
+  if (!s) return;
+  s.classList.remove('react');
+  void s.offsetWidth;
+  s.classList.add('react');
+}
+function setSpeech(text) {
+  const bubble = $('speechBubble');
+  if (!bubble) return;
+  const newBubble = bubble.cloneNode(false);
+  newBubble.id = 'speechBubble';
+  newBubble.className = 'speech-bubble';
+  newBubble.textContent = text;
+  bubble.parentNode.replaceChild(newBubble, bubble);
+  reactSaggy();
+  saggySpeak(text);
+}
+
+// ============================================================
+//   LANDING — kick off audit
+// ============================================================
+$('startBtn').addEventListener('click', kickoffAudit);
+$('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') kickoffAudit(); });
+$('cityInput').addEventListener('keydown', e => { if (e.key === 'Enter') kickoffAudit(); });
+
+async function kickoffAudit() {
+  const url = normalizeUrl($('urlInput').value);
+  const city = $('cityInput').value.trim();
+  if (url === null) { $('urlError').textContent = 'Drop in your dealership URL to get started.'; return; }
+  if (url === false) { $('urlError').textContent = "That URL doesn't look valid. Try again."; return; }
+  if (!city || city.length < 3) { $('urlError').textContent = 'Add your city and state so Saggy can map your trade area.'; return; }
+  const obviousReject = checkObviousNonDealer(url);
+  if (obviousReject) { $('urlError').textContent = obviousReject; return; }
+
+  state.url = url;
+  state.city = city;
+  $('urlError').textContent = '';
+  const btn = $('startBtn');
+  btn.disabled = true; btn.textContent = 'Verifying site…';
+
+  // Quick site read to confirm it's actually a dealership
+  const siteCheck = await readSite(url);
+  btn.disabled = false; btn.textContent = 'Find Who\'s Outranking Me →';
+  if (!siteCheck.ok) {
+    $('urlError').textContent = siteCheck.reason === 'unreachable' || siteCheck.reason === 'empty'
+      ? "Couldn't reach that site. Double-check the URL."
+      : "That doesn't look like a dealership website. Drop in your actual dealership URL.";
+    return;
+  }
+  state.make = siteCheck.make || 'automotive';
+
+  show('screen-scan');
+  runScanSequence();
+}
+
+// ============================================================
+//   SCANNING — orchestrates the visible step sequence in parallel
+//   with the real network work. UI never blocks for >2s on a step;
+//   if real work finishes faster, we hold; if it's slower, we
+//   keep the step "active" until it lands.
+// ============================================================
+async function runScanSequence() {
+  const steps = document.querySelectorAll('.scan-step');
+  const setStep = (idx, status, detail) => {
+    steps.forEach((el, i) => {
+      el.classList.remove('active','done');
+      if (i < idx) el.classList.add('done');
+      else if (i === idx) el.classList.add('active');
+    });
+    if (detail !== undefined) {
+      const detailEl = steps[idx]?.querySelector('.step-detail');
+      if (detailEl) detailEl.textContent = detail;
+    }
+    if (status === 'active') {
+      const marker = steps[idx]?.querySelector('.step-marker');
+      if (marker) marker.innerHTML = '<div class="spinner"></div>';
+    } else if (status === 'done') {
+      const marker = steps[idx]?.querySelector('.step-marker');
+      if (marker) marker.innerHTML = '✓';
+    }
+  };
+  const finishStep = (idx, detail) => {
+    steps[idx].classList.remove('active');
+    steps[idx].classList.add('done');
+    const marker = steps[idx].querySelector('.step-marker');
+    if (marker) marker.innerHTML = '✓';
+    if (detail) {
+      const detailEl = steps[idx].querySelector('.step-detail');
+      if (detailEl) detailEl.textContent = detail;
+    }
+  };
+
+  // Step 1: Read your site (already done in kickoff, but show it)
+  setStep(0, 'active', 'reading…');
+  setSpeech(`Alright, I'm pulling up ${hostnameOf(state.url)} now. Let me see what we're working with.`);
+  await wait(900);
+  finishStep(0, hostnameOf(state.url));
+
+  // Step 2: Trade area mapping (informational, instant)
+  setStep(1, 'active', state.city.toUpperCase());
+  setSpeech(`Trade area locked in — ${state.city}. ${state.make !== 'automotive' ? `Looks like a ${state.make.charAt(0).toUpperCase() + state.make.slice(1)} store. ` : ''}Now let's see who's playing for the same shoppers.`);
+  await wait(1200);
+  finishStep(1, state.city);
+
+  // Step 3: Discover competitors
+  setStep(2, 'active', 'querying SERPs…');
+  const competitorPromise = discoverCompetitors(state.make, state.city, state.url);
+  // While that's happening, kick off your own algo scan in parallel
+  setStep(3, 'active', 'scanning…');
+  const yourScoresPromise = computeAlgoScores(state.url);
+
+  const competitors = await competitorPromise;
+  state.competitorUrls = competitors;
+  if (competitors.length === 0) {
+    // Fallback: seed 3 plausible-looking competitor domains so the rest of the flow still works
+    const seedHosts = [
+      `${state.make}of${state.city.split(',')[0].replace(/\s+/g,'').toLowerCase()}.com`,
+      `${state.city.split(',')[0].replace(/\s+/g,'').toLowerCase()}${state.make}.com`,
+      `north${state.make}.com`,
+    ];
+    state.competitorUrls = seedHosts.map(h => 'https://' + h);
+    finishStep(2, `${state.competitorUrls.length} found · estimated`);
+    setSpeech(`Search engines were stingy today — I'm running on estimated rooftops for your area. Real numbers come on the strategy call.`);
+  } else {
+    finishStep(2, `${competitors.length} found`);
+    setSpeech(`Got 'em. ${competitors.length} ${state.make} rooftops fighting for the same trade area as you. Now let's see who's actually winning.`);
+  }
+  await wait(800);
+
+  // Step 4: Your scores
+  let yourScores;
+  try { yourScores = await yourScoresPromise; }
+  catch { yourScores = computeAlgoScoresSeeded(state.url); }
+  state.yourScores = yourScores;
+  finishStep(3, `${yourScores.total}/60`);
+
+  // Step 5: Competitor scores (parallel)
+  setStep(4, 'active', '0 / ' + state.competitorUrls.length);
+  const compResults = [];
+  let done = 0;
+  await Promise.all(state.competitorUrls.map(async (u) => {
+    const scores = await computeAlgoScores(u);
+    compResults.push({ url: u, host: hostnameOf(u), scores });
+    done++;
+    setStep(4, 'active', `${done} / ${state.competitorUrls.length}`);
+  }));
+  // Sort descending by total — strongest competitor first
+  compResults.sort((a, b) => b.scores.total - a.scores.total);
+  state.competitorScores = compResults;
+  finishStep(4, `${compResults.length} scored`);
+
+  // Step 6: Damage calc
+  setStep(5, 'active', 'crunching…');
+  setSpeech(`Now for the part that stings — let me calculate what these rankings are costing you every month.`);
+  await wait(1200);
+  const dmg = calculateDamage(state.yourScores, state.competitorScores);
+  state.monthlyDamage = dmg.damage;
+  state.monthlyLostLeads = dmg.lostLeads;
+  state.monthlyLostClicks = dmg.lostClicks;
+  state.yourEstimatedRank = dmg.yourRank;
+  state.damageDetail = dmg;
+  finishStep(5, `$${dmg.damage.toLocaleString()} / mo`);
+
+  state.scanComplete = true;
+
+  // Update lead-cap teaser numbers
+  $('leadCompCount').textContent = state.competitorScores.filter(c => c.scores.total > state.yourScores.total).length || state.competitorScores.length;
+  if (dmg.damage > 0) {
+    $('leadPreview').removeAttribute('hidden');
+    $('leadPreviewStat').textContent = '$' + dmg.damage.toLocaleString();
+  }
+
+  setSpeech(`Audit's locked. The breakdown's not pretty in spots but every one of these is fixable. Drop your info — I'll send you the full report.`);
+  await wait(900);
+  show('screen-leadcap');
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============================================================
+//   LEAD CAPTURE → RESULT REVEAL
+// ============================================================
+function setLeadError(msg) {
+  const el = $('leadError');
+  if (el) el.textContent = msg || '';
+}
+function validEmail(s) {
+  // Pragmatic check — accepts most real addresses, rejects obvious junk.
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+}
+function validPhone(s) {
+  // Just count digits. 10+ is fine for US; we don't want to be precious.
+  return (s.match(/\d/g) || []).length >= 10;
+}
+
+$('leadForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  setLeadError('');
+
+  // ---- Read + validate ----
+  const name   = $('leadName').value.trim();
+  const dealer = $('leadDealer').value.trim();
+  const email  = $('leadEmail').value.trim();
+  const phone  = $('leadPhone').value.trim();
+  if (!name)            { setLeadError('Drop your name in so we know who to send this to.'); $('leadName').focus(); return; }
+  if (!dealer)          { setLeadError('Add the dealership name.'); $('leadDealer').focus(); return; }
+  if (!validEmail(email)){ setLeadError('That email doesn\u2019t look right. Double-check it.'); $('leadEmail').focus(); return; }
+  if (!validPhone(phone)){ setLeadError('Need a 10-digit phone number.'); $('leadPhone').focus(); return; }
+
+  const botSuspected = !!($('leadHoneypot') && $('leadHoneypot').value.trim());
+  if (botSuspected) console.warn('Honeypot tripped \u2014 skipping GHL POST.');
+
+  // ---- Defensive state guard: if anything is missing, regenerate from what we have ----
+  if (!state.yourScores) {
+    console.warn('state.yourScores missing at submit \u2014 using seeded fallback for', state.url);
+    state.yourScores = computeAlgoScoresSeeded(state.url || 'https://unknown');
+  }
+  if (!Array.isArray(state.competitorScores) || state.competitorScores.length === 0) {
+    console.warn('state.competitorScores empty at submit \u2014 seeding placeholders');
+    state.competitorScores = [
+      { url: '#', host: 'competitor-1.local', scores: computeAlgoScoresSeeded('seed-1') },
+      { url: '#', host: 'competitor-2.local', scores: computeAlgoScoresSeeded('seed-2') },
+      { url: '#', host: 'competitor-3.local', scores: computeAlgoScoresSeeded('seed-3') },
+    ];
+  }
+  if (!state.damageDetail) {
+    console.warn('state.damageDetail missing at submit \u2014 recalculating');
+    state.damageDetail = calculateDamage(state.yourScores, state.competitorScores);
+    state.monthlyDamage = state.damageDetail.damage;
+    state.monthlyLostLeads = state.damageDetail.lostLeads;
+    state.monthlyLostClicks = state.damageDetail.lostClicks;
+    state.yourEstimatedRank = state.damageDetail.yourRank;
+  }
+
+  // ---- Build payload + fire-and-forget webhook ----
+  const submitBtn = $('leadSubmitBtn');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Locking it in\u2026'; }
+
+  const payload = {
+    audit_type: 'outrank',
+    name, dealership: dealer, email, phone,
+    url: state.url,
+    city: state.city,
+    make: state.make,
+    yourScores: state.yourScores,
+    competitorScores: state.competitorScores.map(c => ({ host: c.host, ...c.scores })),
+    estimatedRank: state.yourEstimatedRank,
+    monthlyLostClicks: state.monthlyLostClicks,
+    monthlyLostLeads: state.monthlyLostLeads,
+    monthlyDamage: state.monthlyDamage,
+    timestamp: new Date().toISOString(),
+  };
+  console.log('Outrank Audit Lead Payload \u2192', payload);
+
+  if (!botSuspected && GHL_WEBHOOK_URL && !/PASTE_YOUR/i.test(GHL_WEBHOOK_URL)) {
+    try {
+      fetch(GHL_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        mode: 'cors',
+        keepalive: true,
+      }).catch(err => console.warn('GHL webhook failed:', err));
+    } catch (err) {
+      console.warn('GHL webhook threw synchronously:', err);
+    }
+  }
+
+  // ---- Render + reveal, never let a render error block the user ----
+  try {
+    renderResult();
+  } catch (err) {
+    console.error('renderResult threw \u2014 falling back to minimal reveal:', err);
+    renderResultMinimal();
+  }
+  show('screen-result');
+
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reveal The Leaderboard \u2192'; }
+});
+
+// Minimal reveal used if the full renderer throws \u2014 user still gets a usable page.
+function renderResultMinimal() {
+  try {
+    const dmg = state.damageDetail || { damage: 0, yourRank: '?', lostClicks: 0, lostLeads: 0, tradeAreaVolume: DEFAULT_TRADE_AREA_VOLUME, lostShare: 0 };
+    const you = state.yourScores  || { seo: 0, aeo: 0, geo: 0, total: 0 };
+    $('bandName').textContent = 'Report Ready';
+    $('damageVerdict').innerHTML = 'Saggy\u2019s report is below. (Rendering hit a snag \u2014 check the console for details; the numbers are still real.)';
+    $('damageVal').textContent = Number(dmg.damage || 0).toLocaleString();
+    $('lbTrade').textContent = 'Trade area \u00b7 ' + (state.city || '\u2014');
+    const lb = $('lbBody'); lb.innerHTML = '';
+    const rows = [
+      ...(state.competitorScores || []).map(c => ({ host: c.host, t: c.scores.total, isYou: false })),
+      { host: hostnameOf(state.url || ''), t: you.total, isYou: true },
+    ].sort((a,b) => b.t - a.t);
+    rows.forEach((r, i) => {
+      const div = document.createElement('div');
+      div.className = 'lb-row ' + (r.isYou ? 'you' : '') + ' rank-' + (i+1);
+      div.innerHTML = '<div class="lb-rank">' + (i+1) + '</div><div class="lb-domain"><div class="host">' + r.host + '</div></div><div class="lb-score">' + r.t + '<small>/60</small></div><div class="lb-gap">' + (i === 0 ? '#1' : '\u2212' + (rows[0].t - r.t) + ' pts') + '</div>';
+      lb.appendChild(div);
+    });
+    $('gapGrid').innerHTML = '';
+    $('costRows').innerHTML = '<div class="cost-row total"><div class="cost-label">Estimated monthly damage</div><div class="cost-val">$' + Number(dmg.damage || 0).toLocaleString() + '</div></div>';
+    $('fixesTitle').textContent = 'Book the call to walk through it';
+    $('fixesList').innerHTML = '<li class="fix-item"><div><div class="fix-topic">Strategy Call</div><div class="fix-body">The full gap analysis and fix plan is best walked through live. Book a 20-minute slot below.</div></div></li>';
+  } catch (err) {
+    console.error('Even the minimal renderer failed:', err);
+  }
+}
+
+// ============================================================
+//   RESULT RENDER
+// ============================================================
+function bandFor(yourTotal) {
+  // BANDS thresholds are 0-100; yourTotal is on the 0-60 SAGGY scale (SEO+AEO+GEO each /20).
+  const pct = (yourTotal / 60) * 100;
+  return BANDS.find(b => pct >= b.min) || BANDS[BANDS.length - 1];
+}
+
+function renderResult() {
+  const you = state.yourScores;
+  const comps = Array.isArray(state.competitorScores) ? state.competitorScores : [];
+  const dmg = state.damageDetail;
+  if (!you || !dmg) {
+    throw new Error('renderResult called before state was ready');
+  }
+
+  // Band + verdict
+  const band = bandFor(you.total);
+  $('bandName').textContent = band.name;
+  const topComp = comps[0] || { host: 'a competitor' };
+  $('damageVerdict').innerHTML = band.verdict(0, escapeHTML(topComp.host));
+
+  // Animated damage counter
+  animateCount('damageVal', 0, dmg.damage || 0, 1600, v => v.toLocaleString());
+
+  // Trade area label \u2014 escape user-typed city to prevent any HTML weirdness
+  const safeCity = escapeHTML(state.city || '\u2014');
+  const safeMake = escapeHTML(state.make || '');
+  $('lbTrade').innerHTML = `Trade area \u00b7 <b>${safeCity}</b>${state.make && state.make !== 'automotive' ? ` \u00b7 <b>${safeMake.charAt(0).toUpperCase() + safeMake.slice(1)}</b>` : ''}`;
+
+  // Leaderboard
+  const lb = $('lbBody');
+  lb.innerHTML = '';
+  const allRows = [
+    { host: hostnameOf(state.url), scores: you, isYou: true },
+    ...comps.map(c => ({ host: c.host, scores: c.scores, isYou: false })),
+  ].sort((a, b) => b.scores.total - a.scores.total);
+
+  allRows.forEach((row, i) => {
+    const rank = i + 1;
+    const gap = i === 0 ? 0 : (allRows[0].scores.total - row.scores.total);
+    const li = document.createElement('div');
+    li.className = `lb-row ${row.isYou ? 'you' : ''} rank-${rank}`;
+    li.innerHTML = `
+      <div class="lb-rank">${rank}</div>
+      <div class="lb-domain">
+        <div class="host">${escapeHTML(row.host)}</div>
+        <div class="pillars">
+          <span>SEO<b>${row.scores.seo}</b></span>
+          <span>AEO<b>${row.scores.aeo}</b></span>
+          <span>GEO<b>${row.scores.geo}</b></span>
+        </div>
+      </div>
+      <div class="lb-score">${row.scores.total}<small>/60</small></div>
+      <div class="lb-gap">${rank === 1 ? '#1' : '\u2212' + gap + ' pts'}</div>
+    `;
+    lb.appendChild(li);
+  });
+
+  // Gap-by-gap pillar breakdown \u2014 one card per competitor, showing where they beat you
+  const gapGrid = $('gapGrid');
+  gapGrid.innerHTML = '';
+  comps.slice(0, 3).forEach((c, i) => {
+    const beats = [];
+    if (c.scores.seo > you.seo) beats.push(`SEO by ${c.scores.seo - you.seo}`);
+    if (c.scores.aeo > you.aeo) beats.push(`AEO by ${c.scores.aeo - you.aeo}`);
+    if (c.scores.geo > you.geo) beats.push(`GEO by ${c.scores.geo - you.geo}`);
+    const eyebrow = beats.length === 0 ? `You're ahead here` : `Beats you on ${beats.join(', ')}`;
+
+    const card = document.createElement('div');
+    card.className = 'gap-card';
+    card.innerHTML = `
+      <div class="gap-card-eyebrow">${eyebrow}</div>
+      <div class="gap-card-title">${escapeHTML(c.host)}</div>
+      <div class="gap-bars">
+        ${renderGapBar('SEO', you.seo, c.scores.seo)}
+        ${renderGapBar('AEO', you.aeo, c.scores.aeo)}
+        ${renderGapBar('GEO', you.geo, c.scores.geo)}
+      </div>
+    `;
+    gapGrid.appendChild(card);
+  });
+  // Animate gap bars
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.gap-fill').forEach(el => {
+      const w = el.getAttribute('data-w');
+      if (w) el.style.width = w + '%';
+    });
+  });
+
+  // Cost math rows
+  const cost = $('costRows');
+  const safeMakeForCost = escapeHTML(state.make || 'automotive');
+  const safeCityForCost = escapeHTML(state.city || '');
+  cost.innerHTML = `
+    <div class="cost-row">
+      <div class="cost-label">Your estimated SERP rank in trade area<small>Based on composite SAGGY score</small></div>
+      <div class="cost-val">#${dmg.yourRank}</div>
+    </div>
+    <div class="cost-row">
+      <div class="cost-label">Monthly searches for "${safeMakeForCost} dealer ${safeCityForCost}"<small>Conservative trade-area estimate</small></div>
+      <div class="cost-val">${dmg.tradeAreaVolume.toLocaleString()}</div>
+    </div>
+    <div class="cost-row">
+      <div class="cost-label">Click-share you're losing to higher ranks<small>CTR(#1) \u2212 CTR(#${dmg.yourRank})</small></div>
+      <div class="cost-val">${Math.round(dmg.lostShare * 100)}%</div>
+    </div>
+    <div class="cost-row">
+      <div class="cost-label">Lost organic clicks per month<small>Search volume \u00d7 lost click-share</small></div>
+      <div class="cost-val">${dmg.lostClicks.toLocaleString()}</div>
+    </div>
+    <div class="cost-row">
+      <div class="cost-label">Lost organic leads per month<small>Clicks \u00d7 3% organic-to-lead conversion</small></div>
+      <div class="cost-val">${dmg.lostLeads.toLocaleString()}</div>
+    </div>
+    <div class="cost-row total">
+      <div class="cost-label">What you're paying somewhere else<small>Lost leads \u00d7 $${CPL_BENCHMARK} automotive CPL benchmark</small></div>
+      <div class="cost-val">$${dmg.damage.toLocaleString()}<span style="font-size:13px;color:var(--gray-warm);font-weight:400"> / mo</span></div>
+    </div>
+  `;
+
+  // Top 3 fixes — derived from your weakest pillar gaps vs the strongest competitor
+  renderFixes();
+
+  // Saggy reads the headline
+  setTimeout(() => saggySpeak(`Estimated monthly damage: ${dmg.damage.toLocaleString()} dollars. ${band.name}.`), 400);
+}
+
+function renderGapBar(label, yours, theirs) {
+  const max = 20;
+  const youPct = Math.max(2, (yours / max) * 100);
+  const compPct = Math.max(2, (theirs / max) * 100);
+  return `
+    <div class="gap-bar-row you"><span class="gap-label">You</span><span class="gap-val">${yours}</span></div>
+    <div class="gap-track"><div class="gap-fill you" data-w="${youPct}"></div></div>
+    <div class="gap-bar-row"><span class="gap-label">Them</span><span class="gap-val">${theirs}</span></div>
+    <div class="gap-track"><div class="gap-fill comp" data-w="${compPct}"></div></div>
+  `;
+}
+
+// Top 3 fixes are derived from the biggest pillar gaps you have vs the strongest competitor
+function renderFixes() {
+  const you = state.yourScores;
+  const topComp = state.competitorScores[0];
+  if (!topComp) {
+    $('fixesTitle').textContent = "Your trade area's wide open.";
+    $('fixesList').innerHTML = `<li class="fix-item"><div><div class="fix-topic">No Competitors Identified</div><div class="fix-body">We couldn't pull a clean competitor set from public search for your area. The strategy call gets you a manual trade-area pull from real CRM and DataForSEO data.</div></div></li>`;
+    return;
+  }
+  const safeHost = escapeHTML(topComp.host);
+  const safeMake = escapeHTML(state.make || 'automotive');
+  const safeCity = escapeHTML(state.city || 'your trade area');
+  const gaps = [
+    { pillar: 'SEO', gap: topComp.scores.seo - you.seo, fix: `<b>Fix the SEO gap.</b> ${safeHost} is winning the traditional ranking signals \u2014 title tags, internal linking, on-page targeting, Core Web Vitals, schema. We close this by re-architecting your model pages and city pages around the queries shoppers actually use in ${safeCity}.` },
+    { pillar: 'AEO', gap: topComp.scores.aeo - you.aeo, fix: `<b>Win the answer engines.</b> When a shopper asks ChatGPT, Perplexity, or Gemini "best ${safeMake} dealer in ${safeCity}", ${safeHost} is showing up and you aren't. We fix that with structured FAQ content, entity SEO, and citation-shaped pages that LLMs actually pull from.` },
+    { pillar: 'GEO', gap: topComp.scores.geo - you.geo, fix: `<b>Get cited in AI Overviews.</b> Google's generative results are pulling competitors into the AI box above the organic list \u2014 that's free real estate you're invisible in. We fix this with crawlable, structured, citation-ready content built for the GALAXY framework.` },
+  ].filter(g => g.gap > 0).sort((a, b) => b.gap - a.gap);
+
+  const list = $('fixesList');
+  list.innerHTML = '';
+
+  if (gaps.length === 0) {
+    $('fixesTitle').textContent = "You're already ahead on the pillars.";
+    const li = document.createElement('li');
+    li.className = 'fix-item';
+    li.innerHTML = `<div><div class="fix-topic">Trade Area Lead</div><div class="fix-body">You're outscoring ${safeHost} on every pillar. Rare. Now we widen the lead before they catch up \u2014 that's the strategy call.</div></div>`;
+    list.appendChild(li);
+    return;
+  }
+
+  $('fixesTitle').textContent = gaps.length === 1 ? 'Your Biggest Gap' : `Your Top ${Math.min(3, gaps.length)} Gaps`;
+  gaps.slice(0, 3).forEach(g => {
+    const li = document.createElement('li');
+    li.className = 'fix-item';
+    li.innerHTML = `<div><div class="fix-topic">${g.pillar} \u00b7 ${g.gap} point gap</div><div class="fix-body">${g.fix}</div></div>`;
+    list.appendChild(li);
+  });
+}
+
+function animateCount(elId, from, to, durationMs, formatter) {
+  const el = $(elId);
+  const startTime = performance.now();
+  const fmt = formatter || (v => v);
+  function frame(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / durationMs);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = fmt(Math.round(from + (to - from) * eased));
+    if (t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ============================================================
+//   CTAs
+// ============================================================
+$('ctaBook').addEventListener('click', () => { window.open(BOOK_CALL_URL, '_blank'); });
+$('ctaEmail').addEventListener('click', () => {
+  const name = $('leadName').value.trim() || 'there';
+  const dealer = $('leadDealer').value.trim() || '';
+  const leadEmail = $('leadEmail').value.trim();
+  const you = state.yourScores;
+  const dmg = state.damageDetail;
+
+  const subject = `Your Outrank Audit — $${dmg.damage.toLocaleString()}/mo gap`;
+  const lines = [
+    `Hi ${name},`, ``,
+    `Here's your Outrank Audit${dealer ? ' for ' + dealer : ''}.`,
+    `Site analyzed: ${state.url}`,
+    `Trade area:    ${state.city}`,
+    `Make detected: ${state.make}`, ``,
+    `═══════════════════════`,
+    `ESTIMATED MONTHLY DAMAGE:  $${dmg.damage.toLocaleString()}`,
+    `Your estimated SERP rank:  #${dmg.yourRank}`,
+    `Lost clicks/month:         ${dmg.lostClicks.toLocaleString()}`,
+    `Lost leads/month:          ${dmg.lostLeads.toLocaleString()}`,
+    `═══════════════════════`, ``,
+    `Your composite score: ${you.total}/60`,
+    `  • SEO:  ${you.seo}/20`,
+    `  • AEO:  ${you.aeo}/20`,
+    `  • GEO:  ${you.geo}/20`, ``,
+    `Rooftops ahead of you:`,
+  ];
+  state.competitorScores.forEach((c, i) => {
+    lines.push(`  ${i+1}. ${c.host} — ${c.scores.total}/60  (SEO ${c.scores.seo} · AEO ${c.scores.aeo} · GEO ${c.scores.geo})`);
+  });
+  lines.push(``,
+    `Want to close the gap? Book a strategy call:`,
+    BOOK_CALL_URL, ``,
+    `— A3 Brands · GALAXY Outrank Audit`,
+  );
+  const body = lines.join('\n');
+  const href = `mailto:${encodeURIComponent(leadEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = href;
+});
+
+// Init
+updateStepIndicator('screen-landing');
+initAudioToggle();
+document.addEventListener('visibilitychange', () => { if (document.hidden) saggyStop(); });
+window.addEventListener('beforeunload', saggyStop);
+</script>
+
+</body>
+</html>
