@@ -834,6 +834,140 @@
   .lb-row.you .lb-gap { color: var(--gray-dim); }
   .lb-row.rank-1 .lb-gap { color: var(--lime); }
 
+  /* Sales-only panels: hidden in the default (lead-facing) view, revealed by ?view=sales */
+  .sales-only { display: none; }
+  body.sales-view .sales-only { display: block; }
+  body.sales-view .gap-grid.sales-only { display: grid; }
+
+  /* Sales-dashboard screen (entry surface for ?view=sales) */
+  .sales-dash-wrap {
+    max-width: 1100px; margin: 0 auto; padding: 48px 32px 64px;
+  }
+  .sales-dash-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px; margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .sales-dash-title {
+    font-family: var(--display); font-weight: 700; font-size: 48px;
+    color: var(--cream); letter-spacing: -0.02em; line-height: 1.05;
+    margin: 8px 0 12px;
+  }
+  .sales-dash-sub {
+    font-family: var(--body); font-size: 16px; color: var(--gray-warm);
+    line-height: 1.5; max-width: 640px; margin: 0;
+  }
+  .sales-dash-actions { display: flex; gap: 10px; align-items: center; }
+  .sales-dash-btn {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #03130c; font-weight: 700;
+    background: var(--lime); border: 1px solid var(--lime);
+    border-radius: 999px; padding: 12px 22px; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.18s;
+  }
+  .sales-dash-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124, 179, 66, 0.3); }
+  .sales-dash-btn.ghost {
+    background: transparent; color: var(--gray-warm);
+    border-color: rgba(124, 179, 66, 0.3);
+  }
+  .sales-dash-btn.ghost:hover { background: rgba(124, 179, 66, 0.08); color: var(--lime); border-color: var(--lime); }
+  .submissions-row-open {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--lime); font-weight: 600;
+    background: transparent; border: 1px solid rgba(124, 179, 66, 0.3);
+    border-radius: 999px; padding: 6px 12px; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .submissions-row-open:hover { background: var(--lime); color: #03130c; }
+  .submissions-table tbody tr.submissions-clickable { cursor: pointer; }
+  @media (max-width: 720px) {
+    .sales-dash-wrap { padding: 28px 18px 40px; }
+    .sales-dash-title { font-size: 32px; }
+    .sales-dash-header { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* User-activity submissions log (sales-only) */
+  .submissions-panel {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(124, 179, 66, 0.18);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .submissions-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 0% 0%, rgba(124, 179, 66, 0.08), transparent 60%);
+    pointer-events: none;
+  }
+  .submissions-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px; margin-bottom: 20px; position: relative;
+  }
+  .submissions-clear {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--gray-warm);
+    background: transparent; border: 1px solid rgba(124, 179, 66, 0.3);
+    border-radius: 999px; padding: 8px 14px; cursor: pointer;
+    transition: background 0.18s, color 0.18s, border-color 0.18s;
+  }
+  .submissions-clear:hover { background: rgba(124, 179, 66, 0.1); color: var(--lime); border-color: var(--lime); }
+  .submissions-table-wrap {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px; overflow: hidden;
+    background: rgba(3, 19, 12, 0.4);
+    position: relative;
+  }
+  .submissions-table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--mono); font-size: 13px; color: var(--cream);
+  }
+  .submissions-table thead th {
+    text-align: left; padding: 12px 18px;
+    font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--lime); background: rgba(124, 179, 66, 0.06);
+    border-bottom: 1px solid rgba(124, 179, 66, 0.18);
+    font-weight: 600;
+  }
+  .submissions-table tbody td {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+  }
+  .submissions-table tbody tr:last-child td { border-bottom: none; }
+  .submissions-table tbody tr:hover { background: rgba(124, 179, 66, 0.04); }
+  .submissions-table .col-idx { color: var(--gray-dim); }
+  .submissions-table .col-url a { color: var(--cream); text-decoration: none; border-bottom: 1px dashed rgba(124, 179, 66, 0.3); }
+  .submissions-table .col-url a:hover { color: var(--lime); border-bottom-color: var(--lime); }
+  .submissions-table .col-city { color: var(--gray-warm); font-family: var(--body); font-size: 14px; }
+  .submissions-table .col-ts { color: var(--gray-dim); font-size: 12px; }
+  .submissions-empty {
+    padding: 32px 18px; text-align: center;
+    color: var(--gray-dim); font-family: var(--mono); font-size: 12px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .submissions-note {
+    margin-top: 14px; font-family: var(--body); font-size: 12.5px;
+    color: var(--gray-dim); line-height: 1.55;
+  }
+  .submissions-note b { color: var(--lime); font-weight: 600; }
+  @media (max-width: 640px) {
+    .submissions-panel { padding: 20px; }
+    .submissions-table { font-size: 12px; }
+    .submissions-table thead th,
+    .submissions-table tbody td { padding: 10px 12px; }
+  }
+  .sales-badge {
+    position: fixed; top: 14px; right: 14px; z-index: 9999;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--lime);
+    background: rgba(124, 179, 66, 0.12); border: 1px solid rgba(124, 179, 66, 0.4);
+    padding: 6px 10px; border-radius: 999px; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .sales-badge:hover { background: var(--lime); color: #03130c; }
+
   /* Gap-by-gap pillar breakdown */
   .gap-grid {
     display: grid;
@@ -1143,6 +1277,41 @@
   <div class="step-indicator" id="stepIndicator"></div>
 </header>
 
+<!-- ============ SALES DASHBOARD (entry surface for ?view=sales) ============ -->
+<section class="screen" id="screen-sales-dash">
+  <div class="sales-dash-wrap">
+    <div class="sales-dash-header">
+      <div>
+        <div class="eyebrow">Sales Console</div>
+        <h1 class="sales-dash-title">User Activity</h1>
+        <p class="sales-dash-sub">Every dealership that's run an audit on this device. Click any row to pull up the full report.</p>
+      </div>
+      <div class="sales-dash-actions">
+        <button type="button" class="sales-dash-btn" id="salesNewAuditBtn">+ New Audit</button>
+        <button type="button" class="sales-dash-btn ghost" id="salesDashClearBtn">Clear Log</button>
+      </div>
+    </div>
+
+    <div class="submissions-table-wrap">
+      <table class="submissions-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Dealership URL</th>
+            <th>City</th>
+            <th style="width: 180px;">Submitted</th>
+            <th style="width: 120px; text-align: right;"></th>
+          </tr>
+        </thead>
+        <tbody id="submissionsDashBody"></tbody>
+      </table>
+    </div>
+    <div class="submissions-note" style="margin-top: 18px;">
+      Local prototype — entries live in this browser only. Wire to the <b>reports</b> table (Phase 2) for a real cross-rep log.
+    </div>
+  </div>
+</section>
+
 <!-- ============ SCREEN 1: LANDING ============ -->
 <section class="screen active" id="screen-landing">
   <div class="landing-wrap">
@@ -1314,11 +1483,38 @@
       <div id="lbBody"></div>
     </div>
 
+    <!-- SUBMISSIONS LOG (sales-only) -->
+    <div class="submissions-panel sales-only" id="submissionsPanel">
+      <div class="submissions-header">
+        <div>
+          <div class="cost-eyebrow">User Activity</div>
+          <div class="cost-title" style="margin-bottom: 0;">URLs analyzed from the lead side</div>
+        </div>
+        <button type="button" class="submissions-clear" id="submissionsClear" title="Clear local activity log">Clear</button>
+      </div>
+      <div class="submissions-table-wrap">
+        <table class="submissions-table" id="submissionsTable">
+          <thead>
+            <tr>
+              <th style="width: 60px;">#</th>
+              <th>URL</th>
+              <th>City</th>
+              <th style="width: 180px;">Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="submissionsBody"></tbody>
+        </table>
+      </div>
+      <div class="submissions-note">
+        Local prototype — entries are stored in this browser only. Wire to the <b>reports</b> table (Phase 2) for a real cross-user log.
+      </div>
+    </div>
+
     <!-- GAP BREAKDOWN -->
-    <div class="gap-grid" id="gapGrid"></div>
+    <div class="gap-grid sales-only" id="gapGrid"></div>
 
     <!-- COST MATH -->
-    <div class="cost-panel">
+    <div class="cost-panel sales-only">
       <div class="cost-eyebrow">The Math</div>
       <div class="cost-title">How we got to that number.</div>
       <div class="cost-rows" id="costRows"></div>
@@ -1328,7 +1524,7 @@
     </div>
 
     <!-- FIXES -->
-    <div class="fixes-panel">
+    <div class="fixes-panel sales-only">
       <div class="fixes-header">
         <div class="fixes-eyebrow">What I'd Fix First</div>
         <div class="fixes-title" id="fixesTitle">Your Top 3 Gaps</div>
@@ -1397,6 +1593,7 @@ function show(screenId) {
 function updateStepIndicator(screenId) {
   const map = {
     'screen-landing':  '',
+    'screen-sales-dash':'<span>Sales</span><span class="dot">·</span><span>Console</span>',
     'screen-scan':     '<span>Step</span><span class="dot">·</span><span>Audit In Progress</span>',
     'screen-leadcap':  '<span>Step</span><span class="dot">·</span><span>Report Ready</span>',
     'screen-result':   '<span>Step</span><span class="dot">·</span><span>Your Outrank Report</span>',
@@ -1680,7 +1877,7 @@ function pickSaggyVoice() {
   if (_saggyVoice) return _saggyVoice;
   const voices = window.speechSynthesis.getVoices();
   if (!voices.length) return null;
-  const preferred = ['Daniel','Alex','Fred','Aaron','Tom','Reed','Microsoft Guy','Google US English Male'];
+  const preferred = ['Junior','Eddy','Reed','Flo','Rocko','Shelley','Aaron','Arthur','Rishi','Microsoft Guy','Google UK English Male'];
   for (const name of preferred) {
     const v = voices.find(x => x.name.toLowerCase().includes(name.toLowerCase()) && /en[-_]/i.test(x.lang));
     if (v) { _saggyVoice = v; return v; }
@@ -1691,6 +1888,15 @@ function pickSaggyVoice() {
 if (SAGGY_SUPPORTS_TTS) {
   window.speechSynthesis.onvoiceschanged = () => { _saggyVoice = null; pickSaggyVoice(); };
 }
+let _saggyKeepAlive = null;
+function _saggyStartKeepAlive() {
+  if (_saggyKeepAlive) return;
+  _saggyKeepAlive = setInterval(() => {
+    const ss = window.speechSynthesis;
+    if (!ss.speaking) { clearInterval(_saggyKeepAlive); _saggyKeepAlive = null; return; }
+    ss.pause(); ss.resume();
+  }, 10000);
+}
 function saggySpeak(text) {
   if (!SAGGY_SUPPORTS_TTS || !state.audioEnabled || !text) return;
   try {
@@ -1698,11 +1904,18 @@ function saggySpeak(text) {
     const u = new SpeechSynthesisUtterance(text);
     const v = pickSaggyVoice();
     if (v) u.voice = v;
-    u.rate = 1.02; u.pitch = 0.92; u.volume = 1.0;
+    u.rate = 1.05; u.pitch = 1.25; u.volume = 1.0;
+    u.onend = () => { if (_saggyKeepAlive) { clearInterval(_saggyKeepAlive); _saggyKeepAlive = null; } };
+    u.onerror = u.onend;
     window.speechSynthesis.speak(u);
+    _saggyStartKeepAlive();
   } catch (err) { console.warn('TTS failed:', err); }
 }
-function saggyStop() { if (SAGGY_SUPPORTS_TTS) window.speechSynthesis.cancel(); }
+function saggyStop() {
+  if (!SAGGY_SUPPORTS_TTS) return;
+  window.speechSynthesis.cancel();
+  if (_saggyKeepAlive) { clearInterval(_saggyKeepAlive); _saggyKeepAlive = null; }
+}
 function initAudioToggle() {
   const btn = $('audioToggle'); if (!btn) return;
   try { if (localStorage.getItem('saggyAudio') === '1') { state.audioEnabled = true; btn.setAttribute('aria-pressed','true'); } } catch {}
@@ -1754,6 +1967,7 @@ async function kickoffAudit() {
 
   state.url = url;
   state.city = city;
+  saggySubmissionsAdd({ url, city });
   $('urlError').textContent = '';
   const btn = $('startBtn');
   btn.disabled = true; btn.textContent = 'Verifying site…';
@@ -1892,6 +2106,12 @@ async function runScanSequence() {
 
   setSpeech(`Audit's locked. The breakdown's not pretty in spots but every one of these is fixable. Drop your info — I'll send you the full report.`);
   await wait(900);
+  // Sales view skips lead-capture and goes straight to the full report.
+  if (document.body.classList.contains('sales-view')) {
+    try { renderResult(); } catch (err) { console.error('renderResult threw — falling back to minimal reveal:', err); renderResultMinimal(); }
+    show('screen-result');
+    return;
+  }
   show('screen-leadcap');
 }
 
@@ -2263,6 +2483,141 @@ $('ctaEmail').addEventListener('click', () => {
   const href = `mailto:${encodeURIComponent(leadEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = href;
 });
+
+// User-activity log (sales-only). Today: localStorage on this device.
+// Phase 2: swap the load/add bodies to call /api/submissions — UI stays identical.
+const SAGGY_SUBMISSIONS_KEY = 'saggySubmissions';
+const SAGGY_SUBMISSIONS_MAX = 200;
+function saggySubmissionsLoad() {
+  try {
+    const raw = localStorage.getItem(SAGGY_SUBMISSIONS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+function saggySubmissionsAdd(entry) {
+  if (!entry || !entry.url) return;
+  try {
+    const list = saggySubmissionsLoad();
+    list.unshift({
+      url: entry.url,
+      city: entry.city || '',
+      ts: Date.now(),
+    });
+    if (list.length > SAGGY_SUBMISSIONS_MAX) list.length = SAGGY_SUBMISSIONS_MAX;
+    localStorage.setItem(SAGGY_SUBMISSIONS_KEY, JSON.stringify(list));
+    if (document.body.classList.contains('sales-view')) renderSubmissionsTable();
+  } catch (err) { console.warn('Could not persist submission:', err); }
+}
+function saggySubmissionsClear() {
+  try { localStorage.removeItem(SAGGY_SUBMISSIONS_KEY); } catch {}
+  renderSubmissionsTable();
+}
+function formatSubmissionTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+const _escapeHtml = str => String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+function _renderSubmissionsInto(tbody, { withOpenAction = false } = {}) {
+  if (!tbody) return;
+  const list = saggySubmissionsLoad();
+  const colspan = withOpenAction ? 5 : 4;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="submissions-empty">No submissions yet — they will show up here as users run audits.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map((entry, i) => {
+    const safeUrl = _escapeHtml(entry.url);
+    const host = (() => { try { return new URL(entry.url).hostname.replace(/^www\./, ''); } catch { return entry.url; } })();
+    const safeCity = _escapeHtml(entry.city || '');
+    const rowClass = withOpenAction ? 'submissions-clickable' : '';
+    const action = withOpenAction
+      ? '<td style="text-align:right;"><button type="button" class="submissions-row-open" data-url="' + safeUrl + '" data-city="' + safeCity + '">Open →</button></td>'
+      : '';
+    return (
+      '<tr class="' + rowClass + '" data-url="' + safeUrl + '" data-city="' + safeCity + '">' +
+        '<td class="col-idx">' + String(i + 1).padStart(2, '0') + '</td>' +
+        '<td class="col-url"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">' + _escapeHtml(host) + '</a></td>' +
+        '<td class="col-city">' + (safeCity || '—') + '</td>' +
+        '<td class="col-ts">' + formatSubmissionTime(entry.ts) + '</td>' +
+        action +
+      '</tr>'
+    );
+  }).join('');
+}
+function renderSubmissionsTable() {
+  _renderSubmissionsInto(document.getElementById('submissionsBody'));
+  _renderSubmissionsInto(document.getElementById('submissionsDashBody'), { withOpenAction: true });
+}
+function runAuditFromRow(url, city) {
+  if (!url) return;
+  const urlInput = document.getElementById('urlInput');
+  const cityInput = document.getElementById('cityInput');
+  if (urlInput) urlInput.value = url;
+  if (cityInput) cityInput.value = city || '';
+  // Land them on the landing screen briefly so kickoffAudit can read the inputs and the
+  // existing pipeline (scan → result) takes over. The sales-view body class stays on,
+  // so the result will show all sales-only panels.
+  show('screen-landing');
+  setTimeout(() => kickoffAudit(), 0);
+}
+
+// View mode: ?view=sales boots into the sales console (skipping the lead funnel)
+// and reveals the math + gap + fixes panels on the result page.
+(function initViewMode() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') !== 'sales') return;
+
+    document.body.classList.add('sales-view');
+    const badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = 'sales-badge';
+    badge.textContent = '← Sales console';
+    badge.title = 'Back to user-activity dashboard';
+    badge.addEventListener('click', () => { renderSubmissionsTable(); show('screen-sales-dash'); });
+    document.body.appendChild(badge);
+
+    // Boot directly into the sales dashboard instead of the lead landing.
+    show('screen-sales-dash');
+    renderSubmissionsTable();
+
+    // Result-screen clear button (existing submissions panel)
+    const clearBtn = document.getElementById('submissionsClear');
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      if (confirm('Clear local activity log? This only affects this browser.')) saggySubmissionsClear();
+    });
+
+    // Dashboard actions
+    const newBtn = document.getElementById('salesNewAuditBtn');
+    if (newBtn) newBtn.addEventListener('click', () => show('screen-landing'));
+    const dashClear = document.getElementById('salesDashClearBtn');
+    if (dashClear) dashClear.addEventListener('click', () => {
+      if (confirm('Clear local activity log? This only affects this browser.')) saggySubmissionsClear();
+    });
+
+    // Row-level "Open" — re-run the audit for that dealership using the existing pipeline.
+    const dashBody = document.getElementById('submissionsDashBody');
+    if (dashBody) {
+      dashBody.addEventListener('click', (e) => {
+        const trigger = e.target.closest('.submissions-row-open, tr.submissions-clickable');
+        if (!trigger) return;
+        // Ignore clicks on the inline URL anchor (let it open the dealership site).
+        if (e.target.closest('a')) return;
+        const url = trigger.dataset.url;
+        const city = trigger.dataset.city;
+        if (url) runAuditFromRow(url, city);
+      });
+    }
+  } catch (err) { console.warn('Sales view init failed:', err); }
+})();
 
 // Init
 updateStepIndicator('screen-landing');
