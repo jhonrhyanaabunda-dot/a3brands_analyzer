@@ -655,7 +655,40 @@ export function initAudit() {
     };
     console.log("Outrank Audit Lead Payload →", payload);
 
-    if (!botSuspected && GHL_WEBHOOK_URL && !/PASTE_YOUR/i.test(GHL_WEBHOOK_URL)) {
+    // Persist the lead to our own backend so sales reps can see it on any device.
+    // GHL fires only AFTER this succeeds so duplicates don't spam the pipeline.
+    let savedOk = botSuspected;
+    if (!botSuspected) {
+      try {
+        const res = await fetch("/api/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        });
+        if (res.status === 409) {
+          const body = await res.json().catch(() => ({}));
+          const field = body?.field;
+          const which = field === "email" ? "email" : field === "name" ? "name" : "user or email";
+          setLeadError(`That ${which} already exists — try another.`);
+          const focusId = field === "name" ? "leadName" : "leadEmail";
+          ($(focusId) as HTMLInputElement | null)?.focus();
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Reveal The Leaderboard →"; }
+          return;
+        }
+        if (!res.ok) {
+          const detail = await res.text().catch(() => "");
+          console.warn("Lead save failed:", res.status, detail);
+        } else {
+          savedOk = true;
+          renderSubmissionsTable().catch(() => {});
+        }
+      } catch (err) {
+        console.warn("Lead save threw:", err);
+      }
+    }
+
+    if (savedOk && !botSuspected && GHL_WEBHOOK_URL && !/PASTE_YOUR/i.test(GHL_WEBHOOK_URL)) {
       try {
         fetch(GHL_WEBHOOK_URL, {
           method: "POST",
@@ -666,27 +699,6 @@ export function initAudit() {
         }).catch((err) => console.warn("GHL webhook failed:", err));
       } catch (err) {
         console.warn("GHL webhook threw synchronously:", err);
-      }
-    }
-
-    // Persist the lead to our own backend so sales reps can see it on any device.
-    if (!botSuspected) {
-      try {
-        const res = await fetch("/api/leads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          keepalive: true,
-        });
-        if (!res.ok) {
-          const detail = await res.text().catch(() => "");
-          console.warn("Lead save failed:", res.status, detail);
-        } else {
-          // Refresh the sales-side tables in the background; no-op if they aren't mounted.
-          renderSubmissionsTable().catch(() => {});
-        }
-      } catch (err) {
-        console.warn("Lead save threw:", err);
       }
     }
 

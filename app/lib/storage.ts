@@ -77,6 +77,23 @@ async function writeAll(list: Lead[]): Promise<void> {
   await fs.rename(tmp, LEADS_FILE);
 }
 
+export type DuplicateField = "email" | "name";
+
+// Case-insensitive duplicate check against the existing leads list.
+// Returns which field collided so the UI can show a specific message.
+export async function findDuplicateLead(email: string, name: string): Promise<DuplicateField | null> {
+  const list = await readAll();
+  const e = email.trim().toLowerCase();
+  const n = name.trim().toLowerCase();
+  for (const l of list) {
+    if (e && (l.email || "").trim().toLowerCase() === e) return "email";
+  }
+  for (const l of list) {
+    if (n && (l.name || "").trim().toLowerCase() === n) return "name";
+  }
+  return null;
+}
+
 export async function listLeads(): Promise<Lead[]> {
   const list = await readAll();
   // Backfill status for any rows written before the status field existed.

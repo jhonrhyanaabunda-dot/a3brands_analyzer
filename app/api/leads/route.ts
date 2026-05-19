@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { addLead, clearLeads, listLeads, LEAD_STATUSES, type LeadStatus } from "@/app/lib/storage";
+import { addLead, clearLeads, findDuplicateLead, listLeads, LEAD_STATUSES, type LeadStatus } from "@/app/lib/storage";
 
 // Force this route to run in the Node runtime (we need fs).
 export const runtime = "nodejs";
@@ -48,6 +48,14 @@ export async function POST(req: Request) {
   const requestedStatus = (LEAD_STATUSES as readonly string[]).includes(body.status)
     ? (body.status as LeadStatus)
     : undefined;
+
+  const dup = await findDuplicateLead(email, name);
+  if (dup) {
+    return NextResponse.json(
+      { ok: false, error: "duplicate", field: dup },
+      { status: 409 },
+    );
+  }
 
   try {
     const lead = await addLead({
