@@ -13,7 +13,7 @@ export default function Page() {
       <header className="topbar">
         <a className="logo" href="/" aria-label="A3 Brands">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/a3brands-1.png" alt="A3 Brands" />
+          <img src="/a3brands-logo.png" alt="A3 Brands · Automotive SEO Experts" />
         </a>
         <div className="step-indicator" id="stepIndicator"></div>
       </header>
