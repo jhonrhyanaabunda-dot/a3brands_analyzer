@@ -39,7 +39,7 @@ export function initAudit() {
   ];
 
   const state: any = {
-    url: "", city: "", make: "",
+    url: "", city: "", cityConfidence: null, make: "",
     competitorUrls: [], yourScores: null, competitorScores: [],
     monthlyDamage: 0, monthlyLostLeads: 0, monthlyLostClicks: 0,
     yourEstimatedRank: 4,
@@ -57,6 +57,7 @@ export function initAudit() {
   function updateStepIndicator(screenId: string) {
     const map: Record<string, string> = {
       "screen-landing": "",
+      "screen-confirm-city": '<span>Step</span><span class="dot">·</span><span>Confirming Trade Area</span>',
       "screen-sales-dash": '<span>Sales</span><span class="dot">·</span><span>Console</span>',
       "screen-scan": '<span>Step</span><span class="dot">·</span><span>Audit In Progress</span>',
       "screen-leadcap": '<span>Step</span><span class="dot">·</span><span>Report Ready</span>',
@@ -447,25 +448,117 @@ export function initAudit() {
   // ============================================================
   $("startBtn")?.addEventListener("click", kickoffAudit);
   $("urlInput")?.addEventListener("keydown", (e: any) => { if (e.key === "Enter") kickoffAudit(); });
-  $("cityInput")?.addEventListener("keydown", (e: any) => { if (e.key === "Enter") kickoffAudit(); });
+  $("confirmCityBtn")?.addEventListener("click", confirmCityAndScan);
+  $("confirmCityInput")?.addEventListener("keydown", (e: any) => { if (e.key === "Enter") confirmCityAndScan(); });
 
   async function kickoffAudit() {
     const url = normalizeUrl(($("urlInput") as HTMLInputElement)?.value || "");
-    const city = (($("cityInput") as HTMLInputElement)?.value || "").trim();
     if (url === null) { $("urlError")!.textContent = "Drop in your dealership URL to get started."; return; }
     if (url === false) { $("urlError")!.textContent = "That URL doesn't look valid. Try again."; return; }
-    if (!city || city.length < 3) { $("urlError")!.textContent = "Add your city and state so Saggy can map your trade area."; return; }
     const obviousReject = checkObviousNonDealer(url as string);
     if (obviousReject) { $("urlError")!.textContent = obviousReject; return; }
 
     state.url = url;
-    state.city = city;
     $("urlError")!.textContent = "";
 
     // Detect make from the hostname (e.g. "bmwofsouthatlanta.com" → "bmw").
     // The audit pipeline downstream (Firecrawl → analyzer → seeded) handles
     // unreachable sites on its own; no third-party pre-flight needed.
     state.make = detectMakeFromUrl(url as string) || "automotive";
+
+    // Pop the confirm screen immediately with a spinner, then ask /api/extract
+    // for the city. While the user is reading "We found you in X, Y" the
+    // confirmation handler kicks off the full /api/audit in the background.
+    show("screen-confirm-city");
+    runLocationExtraction(url as string);
+  }
+
+  async function runLocationExtraction(url: string) {
+    const headline = $("confirmCityHeadline")!;
+    const sub = $("confirmCitySub")!;
+    const card = $("confirmCityCard")!;
+    const input = $("confirmCityInput") as HTMLInputElement | null;
+    const btn = $("confirmCityBtn") as HTMLButtonElement | null;
+    const err = $("confirmCityError")!;
+    err.textContent = "";
+
+    // Reset to extracting state every time (in case user backs out and retries).
+    headline.innerHTML = 'Pulling up your trade area<span class="accent">…</span>';
+    sub.textContent = "Reading your site for the city and state Saggy should use.";
+    card.setAttribute("hidden", "");
+
+    state.cityConfidence = null;
+
+    let payload: any = null;
+    try {
+      const res = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        keepalive: true,
+      });
+      if (res.ok) payload = await res.json().catch(() => null);
+    } catch (e) {
+      console.warn("/api/extract failed:", e);
+    }
+
+    const city = (payload?.city || "").trim();
+    const stateStr = (payload?.state || "").trim();
+    const combined = city && stateStr ? `${city}, ${stateStr}` : (city || stateStr || "");
+    const confidence = payload?.confidence ?? null;
+
+    card.removeAttribute("hidden");
+
+    if (combined) {
+      state.cityConfidence = confidence;
+      headline.innerHTML = `We found you in <span class="accent">${escapeForHtml(combined)}</span>`;
+      sub.textContent = confidence === "low"
+        ? "Best guess from your URL — confirm or correct before we run the audit."
+        : "Pulled straight from your site. Confirm or edit if it's off.";
+      if (input) {
+        input.value = combined;
+        input.dataset.extracted = combined;
+      }
+      if (btn) btn.textContent = "Yes, that's right →";
+    } else {
+      state.cityConfidence = null;
+      headline.innerHTML = `Where's your trade area<span class="accent">?</span>`;
+      sub.textContent = "We couldn't auto-detect your city — drop it in.";
+      if (input) {
+        input.value = "";
+        input.dataset.extracted = "";
+      }
+      if (btn) btn.textContent = "Map my trade area →";
+      input?.focus();
+    }
+  }
+
+  function escapeForHtml(s: string) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function confirmCityAndScan() {
+    const input = $("confirmCityInput") as HTMLInputElement | null;
+    const err = $("confirmCityError")!;
+    const typed = (input?.value || "").trim();
+    if (!typed || typed.length < 3) {
+      err.textContent = "Add your city and state so Saggy can map your trade area.";
+      input?.focus();
+      return;
+    }
+    err.textContent = "";
+
+    // If user edited the auto-extracted value, mark as manual; otherwise keep
+    // whatever confidence the extractor reported.
+    const extracted = (input?.dataset.extracted || "").trim();
+    if (extracted && typed === extracted) {
+      // confidence stays as set by runLocationExtraction()
+    } else {
+      state.cityConfidence = "manual";
+    }
+    state.city = typed;
 
     show("screen-scan");
     runScanSequence();
@@ -644,6 +737,7 @@ export function initAudit() {
       name, dealership: dealer, email, phone,
       url: state.url,
       city: state.city,
+      cityConfidence: state.cityConfidence ?? undefined,
       make: state.make,
       yourScores: state.yourScores,
       competitorScores: state.competitorScores.map((c: any) => ({ host: c.host, ...c.scores })),

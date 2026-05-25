@@ -25,6 +25,9 @@ export type Lead = {
   url: string;
   city: string;
   make: string;
+  // Sales-side QA hint: did the user confirm an auto-extracted city, edit
+  // one, or type from scratch? Optional for backward compat with old rows.
+  cityConfidence?: "high" | "mid" | "low" | "manual";
   // Outcome snapshot (so sales can sort/filter without re-running the audit)
   estimatedRank: number | null;
   monthlyDamage: number | null;

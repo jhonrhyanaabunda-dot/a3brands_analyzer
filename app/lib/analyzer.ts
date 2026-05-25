@@ -116,6 +116,39 @@ function nodeIsType(node: any, name: string): boolean {
   return false;
 }
 
+// Walks every JSON-LD block looking for PostalAddress nodes (either standalone
+// or nested under a LocalBusiness/AutoDealer). Returns the first non-empty
+// (city, state) pair. Used by /api/extract and the audit fallback path so the
+// funnel can drop the city input when the site advertises it in markup.
+export function extractLocation(html: string): { city: string; state: string } | null {
+  const blocks = getJsonLdBlocks(html);
+  const stack: any[] = [...blocks];
+  while (stack.length) {
+    const node = stack.pop();
+    if (!node || typeof node !== "object") continue;
+    if (Array.isArray(node)) { for (const x of node) stack.push(x); continue; }
+
+    const addr = node.address;
+    const candidate =
+      nodeIsType(node, "PostalAddress") ? node :
+      addr && typeof addr === "object" && !Array.isArray(addr) ? addr :
+      null;
+    if (candidate) {
+      const city = typeof candidate.addressLocality === "string" ? candidate.addressLocality.trim() : "";
+      const stateRaw = typeof candidate.addressRegion === "string" ? candidate.addressRegion.trim() : "";
+      if (city || stateRaw) {
+        return { city, state: stateRaw };
+      }
+    }
+
+    for (const key of Object.keys(node)) {
+      const v = node[key];
+      if (v && typeof v === "object") stack.push(v);
+    }
+  }
+  return null;
+}
+
 // =============================================================
 //   SEO PILLAR  (0–20)
 // =============================================================

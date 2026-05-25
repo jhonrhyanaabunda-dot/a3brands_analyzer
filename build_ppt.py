@@ -1,11 +1,15 @@
 """Build the production-methodology deck for the two-interface results page.
 
-v2 — updated 2026-05-18 to reflect what's actually been shipped since
-the original methodology. The build trajectory took us through Phase 3
-(server-side audit) and Phase 4 (sales tooling) first, with partial Phase 2
-(persistence) — and skipped Phase 1 (auth) entirely. This deck now tells
-that story honestly with status badges per slide and a build-status
-snapshot up front.
+v3 — updated 2026-05-19 after the Vercel deploy went live and the
+duplicate-lead guard landed. Changes since v2:
+  · Repo pushed to github.com/jhonrhyanaabunda-dot/a3brands_analyzer,
+    auto-deployed via Vercel on every push to main.
+  · tsconfig strict:true (was false) — discriminated unions now narrow.
+  · POST /api/leads rejects duplicates by email or name (409 + field),
+    UI surfaces "That <field> already exists — try another."
+  · GHL webhook moved to fire only AFTER the leads save succeeds, so
+    dup-retry no longer double-posts to the sales pipeline.
+The persistence-on-Vercel warning is now active, not theoretical.
 """
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -165,7 +169,7 @@ def slide_title():
     stripe.fill.solid()
     stripe.fill.fore_color.rgb = LIME
     add_text(s, Inches(0.9), Inches(1.4), Inches(11), Inches(0.4),
-             "PRODUCTION METHODOLOGY  ·  BUILD STATUS v2",
+             "PRODUCTION METHODOLOGY  ·  BUILD STATUS v3",
              font=FONT_MONO, size=14, color=LIME, bold=True)
     add_text(s, Inches(0.9), Inches(1.9), Inches(11.5), Inches(1.5),
              "Shipping the Two-Interface Results Page",
@@ -173,13 +177,13 @@ def slide_title():
     add_text(s, Inches(0.9), Inches(3.3), Inches(11.5), Inches(1.6),
              "Original methodology (May 15) called for Phase 1 first.\n"
              "We built Phases 3 + 4 + part of 2 instead, and skipped Phase 1.\n"
-             "This deck reconciles the plan with what is actually live.",
+             "v3: live on Vercel, strict TS green, duplicate leads now rejected.",
              font=FONT_BODY, size=19, color=GRAY)
     add_text(s, Inches(0.9), Inches(5.7), Inches(11), Inches(0.4),
              "Saggy Outrank Audit  ·  A3 Brands",
              font=FONT_MONO, size=12, color=LIME)
     add_text(s, Inches(0.9), Inches(6.05), Inches(11), Inches(0.4),
-             "Updated 2026-05-18  ·  next.js app router  ·  firecrawl scoring  ·  json-backed leads",
+             "Updated 2026-05-19  ·  vercel auto-deploy  ·  strict typescript  ·  dedup by email + name",
              font=FONT_MONO, size=10, color=DIM)
 
 
@@ -207,6 +211,7 @@ def slide_status_board():
 
     status_block(x0, top_y, col_w, col_h, "DONE", [
         "Next.js App Router + TypeScript port (in-place).",
+        "tsconfig strict:true — discriminated unions narrow correctly.",
         "Server-side audit at /api/audit.",
         "Firecrawl LLM scoring (v2/scrape · json extract).",
         "Local analyzer fallback (regex over fetched HTML).",
@@ -216,17 +221,20 @@ def slide_status_board():
         "Status workflow + PATCH /api/leads/[id].",
         "Sales console with redesigned lead-detail modal.",
         "Trade-area volume varies by city + make.",
+        "Duplicate-lead guard: 409 + field on email or name match.",
+        "GHL webhook fires only on save success — no dup double-posts.",
+        "Vercel auto-deploy from main (a3brands_analyzer repo).",
     ], LIME, DONE_FILL)
 
     status_block(x0 + col_w + gap, top_y, col_w, col_h, "PARTIAL", [
-        "Phase 2 persistence: works in dev only — JSON file "
-        "won't survive a Vercel deploy.",
+        "Phase 2 persistence: NOW live on Vercel — JSON file store "
+        "will not survive cold starts. Migration is urgent.",
         "Sales tooling: dashboard + status workflow shipped, "
         "but no auth gating yet.",
         "Audit cache is per-machine — multi-rep deploys "
         "will need a real KV / Supabase store.",
-        ".env config: FIRECRAWL_API_KEY referenced in code "
-        "but .env file is currently empty.",
+        "FIRECRAWL_API_KEY now set in Vercel; no rate limit "
+        "or daily ceiling guards the endpoint.",
     ], AMBER, WIP_FILL)
 
     status_block(x0 + (col_w + gap) * 2, top_y, col_w, col_h, "STILL OPEN", [
@@ -241,7 +249,7 @@ def slide_status_board():
     ], RED, TODO_FILL)
 
     add_text(s, Inches(0.6), Inches(7.0), Inches(12.3), Inches(0.4),
-             "Phase 1 was skipped on the way to building 3 + 4. The next-step slide tells you exactly how to backfill it.",
+             "v3: deploy is live — persistence + auth are now production gaps, not roadmap items.",
              font=FONT_BODY, size=13, color=GRAY)
 
 
@@ -540,6 +548,8 @@ def slide_data_model():
     add_text(s, Inches(9.1), Inches(2.05), Inches(3.7), Inches(0.4),
              "STILL TO ADD", font=FONT_MONO, size=11, color=AMBER, bold=True)
     add_bullets(s, Inches(9.1), Inches(2.5), Inches(3.7), Inches(4.3), [
+        "Dedup: findDuplicateLead() blocks same email or name "
+        "(case-insensitive). 409 + field surfaced to UI.",
         "lead_token (text unique) — for /r/<token>.",
         "report_views table — who pulled what.",
         "ghl_synced_at — retry CRM pushes without dupes.",

@@ -1,65 +1,16 @@
 import { NextResponse } from "next/server";
-import { scoreHtml, type AnalyzerResult } from "@/app/lib/analyzer";
+import { scoreHtml, extractLocation, type AnalyzerResult } from "@/app/lib/analyzer";
 import { scoreWithFirecrawl, getCachedAudit, setCachedAudit } from "@/app/lib/firecrawl";
+import { fetchHtml } from "@/app/lib/fetchHtml";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const FETCH_TIMEOUT_MS = 12_000;
-const MAX_BYTES = 2_500_000; // 2.5 MB — long enough to cover most dealership homepages
 
 function normalize(rawUrl: string): string | null {
   let url = (rawUrl || "").trim();
   if (!url) return null;
   if (!/^https?:\/\//i.test(url)) url = "https://" + url;
   try { new URL(url); return url; } catch { return null; }
-}
-
-async function fetchHtml(url: string): Promise<{ ok: true; html: string; finalUrl: string } | { ok: false; reason: string }> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        // Polite, recognizable, but not headless-flagged.
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 SaggyAuditBot/1.0",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    });
-    if (!res.ok) return { ok: false, reason: `http_${res.status}` };
-    const ctype = res.headers.get("content-type") || "";
-    if (ctype && !/html|text|xml/i.test(ctype)) return { ok: false, reason: "non_html" };
-
-    // Read with a byte cap so a 50MB page doesn't pin the server.
-    const reader = res.body?.getReader();
-    if (!reader) return { ok: false, reason: "no_body" };
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (value) {
-        total += value.byteLength;
-        chunks.push(value);
-        if (total >= MAX_BYTES) break;
-      }
-    }
-    const buf = new Uint8Array(total);
-    let offset = 0;
-    for (const c of chunks) { buf.set(c, offset); offset += c.byteLength; }
-    const html = new TextDecoder("utf-8", { fatal: false }).decode(buf);
-    return { ok: true, html, finalUrl: res.url || url };
-  } catch (err: any) {
-    if (err?.name === "AbortError") return { ok: false, reason: "timeout" };
-    return { ok: false, reason: "fetch_error" };
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 export async function POST(req: Request) {
@@ -83,6 +34,9 @@ export async function POST(req: Request) {
   if (process.env.FIRECRAWL_API_KEY) {
     try {
       const fc = await scoreWithFirecrawl(url);
+      const location = (fc.city || fc.state)
+        ? { city: fc.city, state: fc.state, businessName: fc.businessName, source: "firecrawl" as const }
+        : null;
       const payload = {
         url,
         finalUrl: url,
@@ -92,6 +46,7 @@ export async function POST(req: Request) {
         total: fc.total,
         source: fc.source,
         reasoning: fc.reasoning,
+        location,
       };
       // Best-effort cache write; never fail the request on cache errors.
       setCachedAudit(url, payload).catch((err) => console.warn("audit cache write failed:", err));
@@ -115,6 +70,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "analyzer_failed", url }, { status: 500 });
   }
 
+  const fromJsonLd = extractLocation(result.html);
+  const location = fromJsonLd
+    ? { city: fromJsonLd.city, state: fromJsonLd.state, businessName: "", source: "jsonld" as const }
+    : null;
+
   const payload = {
     url,
     finalUrl: result.finalUrl,
@@ -124,6 +84,7 @@ export async function POST(req: Request) {
     total: scores.total,
     source: scores.source,
     breakdown: scores.breakdown,
+    location,
   };
   // Cache the analyzer result too — same TTL, same shape, so the next call is instant.
   setCachedAudit(url, payload).catch((err) => console.warn("audit cache write failed:", err));

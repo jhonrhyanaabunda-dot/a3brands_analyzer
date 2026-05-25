@@ -57,6 +57,12 @@ export async function POST(req: Request) {
     );
   }
 
+  const CITY_CONFIDENCE_VALUES = ["high", "mid", "low", "manual"] as const;
+  type CityConfidence = (typeof CITY_CONFIDENCE_VALUES)[number];
+  const cityConfidence = CITY_CONFIDENCE_VALUES.includes(body.cityConfidence as CityConfidence)
+    ? (body.cityConfidence as CityConfidence)
+    : undefined;
+
   try {
     const lead = await addLead({
       name,
@@ -73,6 +79,7 @@ export async function POST(req: Request) {
       yourScores: body.yourScores ?? null,
       competitorScores: Array.isArray(body.competitorScores) ? body.competitorScores : [],
       status: requestedStatus,
+      cityConfidence,
     });
     return NextResponse.json({ ok: true, lead }, { status: 201 });
   } catch (err) {

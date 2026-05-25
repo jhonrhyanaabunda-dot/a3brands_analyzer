@@ -28,7 +28,9 @@ GEO (Generative Engine Optimization) — how Google's AI Overviews / SGE will tr
 
 Be honest. Most dealerships score 8–15 per pillar. A perfect 20 should be very rare and only awarded when every signal is present and well-formed. A score of 0 means the site has none of that pillar's signals at all.
 
-Return only integers 0–20 and a 1–2 sentence reasoning per pillar citing specific signals you observed (or their absence).`;
+Return only integers 0–20 and a 1–2 sentence reasoning per pillar citing specific signals you observed (or their absence).
+
+Also extract the dealership's primary city, US state (two-letter code), and business name from any LocalBusiness / AutoDealer / PostalAddress schema or the page's visible address. Leave empty if you cannot determine them with confidence.`;
 
 const SCORE_SCHEMA = {
   type: "object",
@@ -54,6 +56,9 @@ const SCORE_SCHEMA = {
     seoReasoning: { type: "string", description: "1-2 sentences citing observed SEO signals." },
     aeoReasoning: { type: "string", description: "1-2 sentences citing observed AEO signals." },
     geoReasoning: { type: "string", description: "1-2 sentences citing observed GEO signals." },
+    city: { type: "string", description: "City from LocalBusiness/PostalAddress, or empty." },
+    state: { type: "string", description: "Two-letter US state code from PostalAddress, or empty." },
+    businessName: { type: "string", description: "Dealership name from schema, or empty." },
   },
   required: ["seo", "aeo", "geo", "seoReasoning", "aeoReasoning", "geoReasoning"],
 } as const;
@@ -65,6 +70,9 @@ export type FirecrawlScore = {
   total: number;
   source: "firecrawl";
   reasoning: { seo: string; aeo: string; geo: string };
+  city: string;
+  state: string;
+  businessName: string;
 };
 
 function clamp20(n: number): number {
@@ -124,6 +132,9 @@ export async function scoreWithFirecrawl(url: string): Promise<FirecrawlScore> {
         aeo: String(extracted.aeoReasoning || "").slice(0, 600),
         geo: String(extracted.geoReasoning || "").slice(0, 600),
       },
+      city: String(extracted.city || "").slice(0, 120).trim(),
+      state: String(extracted.state || "").slice(0, 8).trim(),
+      businessName: String(extracted.businessName || "").slice(0, 200).trim(),
     };
   } finally {
     clearTimeout(timer);
