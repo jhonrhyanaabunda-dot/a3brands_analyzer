@@ -123,32 +123,6 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ============ SCREEN 1.5: CONFIRM CITY ============ */}
-      <section className="screen" id="screen-confirm-city">
-        <div className="landing-wrap">
-          <div className="eyebrow" id="confirmCityEyebrow">Trade area · Confirming</div>
-          <h1 className="hero-headline" id="confirmCityHeadline">
-            Pulling up your trade area<span className="accent">…</span>
-          </h1>
-          <p className="hero-sub" id="confirmCitySub">
-            Reading your site for the city and state Saggy should use.
-          </p>
-          <div className="form-stack" id="confirmCityCard" hidden>
-            <div className="field">
-              <span className="field-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-              </span>
-              <input type="text" id="confirmCityInput" placeholder="Your city & state (e.g. Prescott, AZ)" autoComplete="address-level2" />
-            </div>
-            <button type="button" id="confirmCityBtn" className="full-cta">Yes, that&apos;s right →</button>
-          </div>
-          <div className="url-error" id="confirmCityError"></div>
-        </div>
-      </section>
-
       {/* ============ SCREEN 2: SCANNING ============ */}
       <section className="screen" id="screen-scan">
         <div className="scan-wrap">
