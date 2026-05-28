@@ -12,3 +12,16 @@ saggy_transparent.webp
 *.log
 .vscode/
 .idea/
+
+# Next.js
+.next/
+out/
+node_modules/
+next-env.d.ts.bak
+.env*.local
+
+# Local lead store (dev/prototype only — Phase 2 moves this to Supabase)
+data/leads.json
+data/leads.json.tmp
+data/audit-cache.json
+data/audit-cache.json.tmp
