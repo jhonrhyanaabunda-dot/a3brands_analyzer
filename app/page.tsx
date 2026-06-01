@@ -149,7 +149,6 @@ export default function Page() {
               <div className="scan-progress-meta">
                 <span id="scanPercent">0%</span>
                 <span className="scan-progress-note">Saggy&apos;s still scanning underneath this</span>
-                <button type="button" className="scan-skip" id="scanSkip">skip — take me straight to the audit</button>
               </div>
             </div>
 
