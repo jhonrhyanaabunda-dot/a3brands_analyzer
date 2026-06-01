@@ -261,7 +261,8 @@ body::after {
 
 /* ============ SCANNING ============ */
 .scan-wrap {
-  max-width: 1040px;
+  width: 80vw;
+  max-width: 1400px;
   margin: 40px auto 0;
 }
 .scan-stage-card {
@@ -2112,6 +2113,7 @@ body.sales-view .gap-grid.sales-only { display: grid; }
 
 @media (max-width: 880px) {
   /* Stack the two columns: Saggy on top, interaction below */
+  .scan-wrap { width: 100%; }
   .intro-cols { grid-template-columns: 1fr; gap: 20px; }
   .intro-left { position: static; }
   .intro-saggy-foot { flex-direction: row; justify-content: center; gap: 16px; }
