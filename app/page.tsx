@@ -207,13 +207,13 @@ export default function Page() {
             <div className="intro-block" id="goalBlock">
               <div className="intro-q">Pick your #1 goal</div>
               <div className="goal-cards" id="goalCards">
-                <button type="button" className="goal-card" data-goal="being the first name shoppers find">
+                <button type="button" className="goal-card" data-goal-key="visibility" data-goal="being the first name shoppers find">
                   Be the first name shoppers find — search, AI answers, the map.
                 </button>
-                <button type="button" className="goal-card" data-goal="turning visibility into showroom traffic and phone-ups">
+                <button type="button" className="goal-card" data-goal-key="traffic" data-goal="turning visibility into showroom traffic and phone-ups">
                   Turn visibility into real showroom traffic and phone-ups.
                 </button>
-                <button type="button" className="goal-card" data-goal="winning the click without the biggest ad budget">
+                <button type="button" className="goal-card" data-goal-key="efficiency" data-goal="winning the click without the biggest ad budget">
                   Win the click without the biggest ad budget in town.
                 </button>
               </div>

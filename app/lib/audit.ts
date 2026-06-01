@@ -50,7 +50,9 @@ export function initAudit() {
     url: "", city: "", cityConfidence: null, make: "",
     // Captured on the interactive intro (Stage 2). Default to "" so a skipped
     // intro just yields a less-personalized report — never a broken one.
-    goal: "", rival: "",
+    // goalKey ("visibility" | "traffic" | "efficiency") drives the pillar
+    // weighting that shapes the reveal; goal is the human-readable label.
+    goal: "", goalKey: "", rival: "",
     competitorUrls: [], yourScores: null, competitorScores: [],
     monthlyDamage: 0, monthlyLostLeads: 0, monthlyLostClicks: 0,
     yourEstimatedRank: 4,
@@ -367,10 +369,29 @@ export function initAudit() {
     return Math.round(base * mult);
   }
 
+  // The dealer's #1 goal weights the three pillars so the report measures them
+  // on what they actually care about. Each goal leans on the pillars that move
+  // that outcome; an un-answered goal falls back to an even 1/1/1 (identical to
+  // the old composite, so skipping the intro changes nothing).
+  const GOAL_WEIGHTS: Record<string, { seo: number; aeo: number; geo: number }> = {
+    visibility: { seo: 1.0, aeo: 1.4, geo: 1.6 }, // first name found — AI answers + the map
+    traffic:    { seo: 1.4, aeo: 1.1, geo: 1.5 }, // showroom traffic & phone-ups — local + organic
+    efficiency: { seo: 1.6, aeo: 1.3, geo: 1.0 }, // win the click w/o ad budget — organic SEO/AEO
+  };
+  function goalWeights() {
+    return GOAL_WEIGHTS[state.goalKey] || { seo: 1, aeo: 1, geo: 1 };
+  }
+  // Goal-weighted composite used for ranking (the raw /60 total still drives the
+  // displayed pillar scores and leaderboard; only the ranking math is weighted).
+  function goalWeightedScore(scores: any) {
+    const w = goalWeights();
+    return (scores.seo || 0) * w.seo + (scores.aeo || 0) * w.aeo + (scores.geo || 0) * w.geo;
+  }
+
   function calculateDamage(yourScores: any, competitorScores: any[]) {
     const all = [
-      { id: "you", total: yourScores.total },
-      ...competitorScores.map((c, i) => ({ id: "c" + i, total: c.scores.total })),
+      { id: "you", total: goalWeightedScore(yourScores) },
+      ...competitorScores.map((c, i) => ({ id: "c" + i, total: goalWeightedScore(c.scores) })),
     ].sort((a, b) => b.total - a.total);
     const yourRank = all.findIndex((x) => x.id === "you") + 1;
 
@@ -490,6 +511,7 @@ export function initAudit() {
     state.city = "";
     state.cityConfidence = null;
     state.goal = "";
+    state.goalKey = "";
     state.rival = "";
     $("urlError")!.textContent = "";
 
@@ -756,6 +778,7 @@ export function initAudit() {
         document.querySelectorAll(".goal-card").forEach((c) => c.classList.remove("selected"));
         card.classList.add("selected");
         state.goal = label;
+        state.goalKey = card.getAttribute("data-goal-key") || "";
         const confirm = $("goalConfirm");
         if (confirm) { confirm.textContent = `Say less — I'm tuning this whole report to ${label}.`; confirm.removeAttribute("hidden"); }
         const first = !scanCtl.goalDone;
@@ -1240,23 +1263,34 @@ export function initAudit() {
 
     const cards = [
       {
+        pillar: "geo",
         tag: "GEO · AI overviews",
         problem: `You appear in <b>${scale(you.geo, 12)} of 12</b> Google AI Overviews we tested${state.city ? ` for ${escapeHTML(state.city)}` : ""}; ${escapeHTML(rivalName)} shows up in <b>${scale(geoTheir, 12)}</b>.`,
       },
       {
+        pillar: "aeo",
         tag: "AEO · answer engines",
         problem: `Across 10 buyer questions on ChatGPT, Perplexity and Gemini, ${escapeHTML(rivalName)} gets cited <b>${scale(aeoTheir, 10)}</b> times to your <b>${scale(you.aeo, 10)}</b>.`,
       },
       {
+        pillar: "seo",
         tag: "SEO · core signals",
         problem: `On the core ranking signals shoppers search by, ${escapeHTML(rivalName)} scores <b>${seoTheir}/20</b> to your <b>${you.seo}/20</b>.`,
       },
     ];
 
-    grid.innerHTML = cards.map((c) => `
-      <div class="gap-locked">
-        <div class="gap-locked-tag">${c.tag}</div>
-        <div class="gap-locked-problem">${c.problem}</div>
+    // Lead with the pillar the dealer's #1 goal leans on hardest, so the top
+    // gap is the one that matters most to what they told Saggy they want.
+    const w = goalWeights();
+    cards.sort((a: any, b: any) => (w[b.pillar] - w[a.pillar]));
+    if (state.goal) {
+      (cards[0] as any).goalTie = `This is the one standing between you and ${escapeHTML(state.goal)}.`;
+    }
+
+    grid.innerHTML = cards.map((c: any) => `
+      <div class="gap-locked${c.goalTie ? " goal-lead" : ""}">
+        <div class="gap-locked-tag">${c.tag}${c.goalTie ? '<span class="gap-goal-flag">your goal</span>' : ""}</div>
+        <div class="gap-locked-problem">${c.problem}${c.goalTie ? `<span class="gap-goal-tie">${c.goalTie}</span>` : ""}</div>
         <button type="button" class="gap-locked-fix" aria-expanded="false">
           <span class="gap-lock-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>

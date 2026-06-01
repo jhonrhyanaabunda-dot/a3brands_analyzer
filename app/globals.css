@@ -890,13 +890,39 @@ body::after {
   border-radius: 16px;
   padding: 22px;
 }
+/* The gap tied to the dealer's #1 goal leads and gets a subtle highlight */
+.gap-locked.goal-lead {
+  border-color: rgba(124, 179, 66, 0.45);
+  background: rgba(124, 179, 66, 0.07);
+}
 .gap-locked-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--mono);
   font-size: 10.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--lime);
   margin-bottom: 10px;
+}
+.gap-goal-flag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--green-darkest);
+  background: var(--lime);
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.gap-goal-tie {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--body);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--lime-glow);
 }
 .gap-locked-problem {
   font-family: var(--body);
