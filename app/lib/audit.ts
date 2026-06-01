@@ -395,10 +395,21 @@ export function initAudit() {
     ].sort((a, b) => b.total - a.total);
     const yourRank = all.findIndex((x) => x.id === "you") + 1;
 
-    const ceilingRank = yourRank === 1 ? 1 : 1;
-    const yourCTR = CTR_BY_RANK[Math.min(yourRank + 2, 10)] ?? 0.015;
-    const ceilingCTR = CTR_BY_RANK[Math.min(ceilingRank + 2, 10)] ?? 0.3;
-    const lostShare = Math.max(0, ceilingCTR - yourCTR);
+    // Click-share lost vs the #1 spot, straight off the CTR curve (no synthetic
+    // rank offset — that was crushing the number down to the floor every time).
+    const ceilingRank = 1;
+    const ceilingCTR = CTR_BY_RANK[1]; // 0.30 — the top organic result
+    const yourCTR = CTR_BY_RANK[Math.min(yourRank, 10)] ?? 0.015;
+    const rankShare = Math.max(0, ceilingCTR - yourCTR);
+
+    // Continuous gap factor so the figure tracks the *real* deficit, not just
+    // the coarse 1–4 rank: two rank-3 dealers with different point gaps get
+    // different damage. Ranges ~0.75x (barely behind) to ~1.25x (far behind).
+    const leaderWeighted = all[0]?.total || 1;
+    const yourWeighted = goalWeightedScore(yourScores);
+    const gapRatio = Math.max(0, Math.min(1, (leaderWeighted - yourWeighted) / leaderWeighted));
+    const lostShare = rankShare * (0.75 + 0.5 * gapRatio);
+
     const tradeAreaVolume = tradeAreaVolumeFor(state.city, state.make);
     const lostClicks = Math.round(lostShare * tradeAreaVolume);
     const lostLeads = Math.round(lostClicks * LEAD_CONVERSION_RATE);
@@ -757,7 +768,9 @@ export function initAudit() {
     state.damageDetail = dmg;
     state.scanComplete = true;
 
-    $("leadCompCount")!.textContent = String(state.competitorScores.filter((c: any) => c.scores.total > state.yourScores.total).length || state.competitorScores.length);
+    // Match the reveal leaderboard, which always ranks the dealer last behind
+    // the top rooftops, so the count here can't contradict what they'll see.
+    $("leadCompCount")!.textContent = String(Math.min(3, state.competitorScores.length) || 3);
     const previewDamage = displayDamage(dmg.damage);
     if (previewDamage > 0) {
       $("leadPreview")!.removeAttribute("hidden");
