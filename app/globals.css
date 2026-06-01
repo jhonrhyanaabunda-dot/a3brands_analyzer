@@ -11,6 +11,8 @@
   --gray-dim: #6B665C;
   --red: #E25C3E;
   --red-glow: #FF7A5C;
+  /* "You / at-risk" accent — the dealer's own leaderboard row + the live ticker */
+  --gold: #E0B84A;
   --display: 'Sora', sans-serif;
   --body: 'Lato', sans-serif;
   --mono: 'JetBrains Mono', monospace;
@@ -747,8 +749,8 @@ body::after {
 .lb-row + .lb-row { margin-top: 4px; }
 .lb-row:not(.you):hover { background: rgba(255,255,255,0.03); }
 .lb-row.you {
-  background: linear-gradient(90deg, rgba(124, 179, 66, 0.12), rgba(124, 179, 66, 0.04));
-  border: 1px solid rgba(124, 179, 66, 0.35);
+  background: linear-gradient(90deg, rgba(224, 184, 74, 0.14), rgba(224, 184, 74, 0.04));
+  border: 1px solid rgba(224, 184, 74, 0.45);
   padding: 18px 14px;
 }
 .lb-rank {
@@ -758,7 +760,7 @@ body::after {
   color: var(--gray-dim);
   text-align: center;
 }
-.lb-row.you .lb-rank { color: var(--lime); }
+.lb-row.you .lb-rank { color: var(--gold); }
 .lb-row.rank-1 .lb-rank { color: var(--lime-glow); }
 .lb-domain {
   min-width: 0;
@@ -778,7 +780,7 @@ body::after {
   font-size: 10px;
   letter-spacing: 0.18em;
   color: var(--green-darkest);
-  background: var(--lime);
+  background: var(--gold);
   padding: 2px 8px;
   border-radius: 4px;
   margin-left: 10px;
@@ -798,7 +800,7 @@ body::after {
   font-weight: 600;
   margin-left: 4px;
 }
-.lb-row.you .lb-domain .pillars span b { color: var(--lime); }
+.lb-row.you .lb-domain .pillars span b { color: var(--gold); }
 .lb-score {
   font-family: var(--display);
   font-weight: 800;
@@ -807,7 +809,7 @@ body::after {
   letter-spacing: -0.02em;
   text-align: right;
 }
-.lb-row.you .lb-score { color: var(--lime-glow); }
+.lb-row.you .lb-score { color: var(--gold); }
 .lb-score small {
   font-size: 13px;
   font-weight: 400;
@@ -823,6 +825,134 @@ body::after {
 }
 .lb-row.you .lb-gap { color: var(--gray-dim); }
 .lb-row.rank-1 .lb-gap { color: var(--lime); }
+
+/* Personalized reveal headline */
+.result-headline {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(24px, 4vw, 38px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  margin: 18px auto 8px;
+  max-width: 760px;
+}
+.result-subline {
+  font-family: var(--body);
+  font-size: 15px;
+  color: var(--gray-warm);
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* Damage hero — sub-line under the verdict + live ticker */
+.damage-subline {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--gray-warm);
+}
+.damage-ticker {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 22px auto 0;
+  padding: 12px 20px;
+  background: rgba(224, 184, 74, 0.08);
+  border: 1px solid rgba(224, 184, 74, 0.3);
+  border-radius: 999px;
+}
+.damage-ticker-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.damage-ticker-val {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Locked gaps — diagnosis shown, fix locked */
+.locked-gaps { margin-bottom: 36px; }
+.locked-gaps-header { margin-bottom: 18px; }
+.locked-gaps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.gap-locked {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 22px;
+}
+.gap-locked-tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 10px;
+}
+.gap-locked-problem {
+  font-family: var(--body);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--cream);
+  margin-bottom: 18px;
+  flex: 1;
+}
+.gap-locked-problem b { color: var(--white); font-weight: 700; }
+.gap-locked-fix {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gray-warm);
+  background: rgba(3, 19, 12, 0.5);
+  border: 1px dashed rgba(124, 179, 66, 0.4);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.gap-locked-fix:hover { border-color: var(--lime); color: var(--lime); background: rgba(124, 179, 66, 0.08); }
+.gap-lock-icon { display: inline-flex; }
+.gap-locked.revealed .gap-locked-fix { border-style: solid; border-color: var(--lime); color: var(--lime); }
+.gap-locked-msg {
+  margin-top: 14px;
+  font-family: var(--body);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--lime-glow);
+  padding: 12px 14px;
+  background: rgba(124, 179, 66, 0.06);
+  border: 1px solid rgba(124, 179, 66, 0.2);
+  border-radius: 10px;
+}
+
+/* Reveal CTA stack */
+.cta-stack { display: flex; flex-direction: column; gap: 12px; }
+.cta-secondary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cta-note {
+  text-align: center;
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--gray-warm);
+}
 
 /* Sales-only panels: hidden in the default (lead-facing) view, revealed by ?view=sales */
 .sales-only { display: none; }
@@ -1993,15 +2123,18 @@ body.sales-view .gap-grid.sales-only { display: grid; }
 /* Mobile */
 @media (max-width: 880px) {
   .scan-wrap { grid-template-columns: 1fr; gap: 24px; }
-  .scan-stage-card { position: static; }
+  .scan-stage-card { position: static; padding: 32px 24px; min-height: auto; }
   .saggy-panel { position: static; order: -1; }
-  .scan-stage-card { padding: 32px 24px; min-height: auto; }
+  /* Lead with Saggy + the interaction; scan progress sits below it */
+  .intro-panel { order: -1; }
   .scan-title { font-size: 24px; }
   .scan-step { grid-template-columns: 28px 1fr; }
   .scan-step .step-detail { grid-column: 2 / 3; text-align: left; padding-top: 4px; font-size: 10.5px; }
   .lead-row { grid-template-columns: 1fr; }
   .gap-grid { grid-template-columns: 1fr; }
+  .locked-gaps-grid { grid-template-columns: 1fr; }
   .cta-row { grid-template-columns: 1fr; }
+  .cta-secondary-row { grid-template-columns: 1fr; }
   .topbar { padding: 14px 20px; }
   .topbar .step-indicator { display: none; }
   .screen { padding: 80px 20px 40px; }

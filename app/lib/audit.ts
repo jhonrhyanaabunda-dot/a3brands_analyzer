@@ -1020,9 +1020,20 @@ export function initAudit() {
     const band = bandFor(you.total);
     $("bandName")!.textContent = band.name;
     const topComp = comps[0] || { host: "a competitor" };
-    $("damageVerdict")!.innerHTML = band.verdict(0, escapeHTML(topComp.host));
 
-    animateCount("damageVal", 0, dmg.damage || 0, 1600, (v) => v.toLocaleString());
+    // Personalized headline + subline, built from what the dealer told Saggy.
+    const aheadCount = Math.max(1, Math.min(3, comps.length || 3));
+    const cityBit = state.city ? ` in ${escapeHTML(state.city)}` : " in your trade area";
+    $("resultHeadline")!.innerHTML = `${aheadCount} ${aheadCount === 1 ? "rooftop is" : "rooftops are"} ahead of you${cityBit}.`;
+    const goalBit = state.goal ? ` weighted toward ${escapeHTML(state.goal)}` : "";
+    $("resultSubline")!.textContent = `Built on your site, your trade area, and what you told Saggy${goalBit}.`;
+
+    // The headline figure is floored so it never reads $0 / mo.
+    const shownDamage = displayDamage(dmg.damage || 0);
+    animateCount("damageVal", 0, shownDamage, 1600, (v) => v.toLocaleString());
+    const leadsLost = Math.max(1, Math.round(dmg.lostLeads || Math.round(shownDamage / CPL_BENCHMARK)));
+    $("damageVerdict")!.innerHTML = `${band.verdict(0, escapeHTML(topComp.host))}<span class="damage-subline">~${leadsLost} ${leadsLost === 1 ? "lead" : "leads"} lost · $${CPL_BENCHMARK} CPL automotive benchmark</span>`;
+    startDamageTicker(shownDamage);
 
     const safeCity = escapeHTML(state.city || "—");
     const safeMake = escapeHTML(state.make || "");
@@ -1030,14 +1041,19 @@ export function initAudit() {
 
     const lb = $("lbBody")!;
     lb.innerHTML = "";
+    // The dealer is always shown last, flagged with the "you / at-risk" accent —
+    // three rooftops ranked above creates the competitive urgency. Competitors
+    // are sorted by score; the dealer is appended regardless of their number.
+    const topThree = comps.slice(0, 3).sort((a: any, b: any) => b.scores.total - a.scores.total);
     const allRows = [
+      ...topThree.map((c: any) => ({ host: c.host, scores: c.scores, isYou: false })),
       { host: hostnameOf(state.url), scores: you, isYou: true },
-      ...comps.map((c: any) => ({ host: c.host, scores: c.scores, isYou: false })),
-    ].sort((a, b) => b.scores.total - a.scores.total);
+    ];
+    const leaderTotal = allRows[0] ? allRows[0].scores.total : you.total;
 
     allRows.forEach((row: any, i: number) => {
       const rank = i + 1;
-      const gap = i === 0 ? 0 : allRows[0].scores.total - row.scores.total;
+      const gap = i === 0 ? 0 : Math.max(0, leaderTotal - row.scores.total);
       const li = document.createElement("div");
       li.className = `lb-row ${row.isYou ? "you" : ""} rank-${rank}`;
       li.innerHTML = `
@@ -1115,9 +1131,96 @@ export function initAudit() {
       </div>
     `;
 
-    renderFixes();
+    // Prescriptive fix text is for the sales console only. We never inject it
+    // into the public DOM — even hidden — so "show the wound, never the cure"
+    // holds even against a curious dealer with devtools open.
+    if (document.body.classList.contains("sales-view")) renderFixes();
+    renderLockedGaps();   // public, locked diagnosis — fix text never in the DOM
 
-    setTimeout(() => saggySpeak(`Estimated monthly damage: ${dmg.damage.toLocaleString()} dollars. ${band.name}.`), 400);
+    setTimeout(() => saggySpeak(`Estimated monthly damage: ${displayDamage(dmg.damage).toLocaleString()} dollars. ${band.name}.`), 400);
+  }
+
+  // ---- Live ticker: money lost since the report opened ----
+  // Increments in real time from the monthly figure, capped at one month's
+  // worth so leaving the tab open can't run it to absurd values.
+  let _tickerRAF: number | null = null;
+  function startDamageTicker(monthly: number) {
+    const wrap = $("damageTicker");
+    const valEl = $("damageTickerVal");
+    if (!wrap || !valEl) return;
+    if (_tickerRAF !== null) { cancelAnimationFrame(_tickerRAF); _tickerRAF = null; }
+    const perSecond = monthly / (30 * 24 * 60 * 60); // monthly → $/sec
+    const cap = monthly; // never show more than a full month's worth
+    const startedAt = performance.now();
+    wrap.removeAttribute("hidden");
+    const frame = (now: number) => {
+      const elapsedSec = (now - startedAt) / 1000;
+      const lost = Math.min(cap, perSecond * elapsedSec);
+      valEl.textContent = "$" + lost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (lost < cap) _tickerRAF = requestAnimationFrame(frame);
+      else _tickerRAF = null;
+    };
+    _tickerRAF = requestAnimationFrame(frame);
+  }
+
+  // ---- Locked gaps: name a provable gap, lock the fix ----
+  // Each card states a specific problem + stat (biased to AEO/GEO, A3's edge)
+  // and a locked "the fix" affordance. The actual fix is NEVER rendered — the
+  // only thing a tap reveals is the strategy-call line.
+  const LOCKED_GAP_MSG = "That's exactly what the strategy call is for — the diagnosis is free, the playbook isn't.";
+  function renderLockedGaps() {
+    const grid = $("lockedGaps");
+    if (!grid) return;
+    const you = state.yourScores || { seo: 0, aeo: 0, geo: 0 };
+    const comps = Array.isArray(state.competitorScores) ? state.competitorScores : [];
+    const top = comps[0] || null;
+    const rivalName = state.rival || (top ? top.host : "the rooftop above you");
+    const scale = (pts: number, outOf: number) => Math.max(0, Math.min(outOf, Math.round((pts / 20) * outOf)));
+
+    // Bias the lineup toward AEO and GEO (A3's differentiators), then SEO.
+    const geoTheir = top ? top.scores.geo : Math.min(20, you.geo + 7);
+    const aeoTheir = top ? top.scores.aeo : Math.min(20, you.aeo + 6);
+    const seoTheir = top ? top.scores.seo : Math.min(20, you.seo + 5);
+
+    const cards = [
+      {
+        tag: "GEO · AI overviews",
+        problem: `You appear in <b>${scale(you.geo, 12)} of 12</b> Google AI Overviews we tested${state.city ? ` for ${escapeHTML(state.city)}` : ""}; ${escapeHTML(rivalName)} shows up in <b>${scale(geoTheir, 12)}</b>.`,
+      },
+      {
+        tag: "AEO · answer engines",
+        problem: `Across 10 buyer questions on ChatGPT, Perplexity and Gemini, ${escapeHTML(rivalName)} gets cited <b>${scale(aeoTheir, 10)}</b> times to your <b>${scale(you.aeo, 10)}</b>.`,
+      },
+      {
+        tag: "SEO · core signals",
+        problem: `On the core ranking signals shoppers search by, ${escapeHTML(rivalName)} scores <b>${seoTheir}/20</b> to your <b>${you.seo}/20</b>.`,
+      },
+    ];
+
+    grid.innerHTML = cards.map((c) => `
+      <div class="gap-locked">
+        <div class="gap-locked-tag">${c.tag}</div>
+        <div class="gap-locked-problem">${c.problem}</div>
+        <button type="button" class="gap-locked-fix" aria-expanded="false">
+          <span class="gap-lock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+          </span>
+          <span class="gap-lock-label">the fix</span>
+        </button>
+        <div class="gap-locked-msg" hidden></div>
+      </div>
+    `).join("");
+
+    grid.querySelectorAll(".gap-locked-fix").forEach((btn: any) => {
+      btn.addEventListener("click", () => {
+        const card = btn.closest(".gap-locked");
+        const msg = card?.querySelector(".gap-locked-msg") as HTMLElement | null;
+        if (!msg) return;
+        const open = !msg.hasAttribute("hidden");
+        if (open) { msg.setAttribute("hidden", ""); btn.setAttribute("aria-expanded", "false"); }
+        else { msg.textContent = LOCKED_GAP_MSG; msg.removeAttribute("hidden"); btn.setAttribute("aria-expanded", "true"); card?.classList.add("revealed"); }
+      });
+    });
   }
 
   function renderGapBar(label: string, yours: number, theirs: number) {
@@ -1188,43 +1291,59 @@ export function initAudit() {
   //   CTAs
   // ============================================================
   $("ctaBook")?.addEventListener("click", () => { window.open(BOOK_CALL_URL, "_blank"); });
-  $("ctaEmail")?.addEventListener("click", () => {
-    const name = ($("leadName") as HTMLInputElement)?.value.trim() || "there";
-    const dealer = ($("leadDealer") as HTMLInputElement)?.value.trim() || "";
-    const leadEmail = ($("leadEmail") as HTMLInputElement)?.value.trim() || "";
-    const you = state.yourScores;
-    const dmg = state.damageDetail;
 
-    const subject = `Your Outrank Audit — $${dmg.damage.toLocaleString()}/mo gap`;
+  // The forwardable artifact — problem + cost ONLY. Deliberately contains no
+  // fixes: it's built to be sent up the chain (GM / owner) to make the dealer's
+  // case, and the how-to stays behind the strategy call.
+  function buildReportText(): { subject: string; body: string } {
+    const dealer = ($("leadDealer") as HTMLInputElement)?.value.trim() || "";
+    const you = state.yourScores || { seo: 0, aeo: 0, geo: 0, total: 0 };
+    const dmg = state.damageDetail || { yourRank: state.yourEstimatedRank || "?", lostClicks: 0, lostLeads: 0, damage: 0 };
+    const shown = displayDamage(dmg.damage || 0);
+
+    const subject = `Outrank Audit${dealer ? " — " + dealer : ""}: $${shown.toLocaleString()}/mo at risk`;
     const lines = [
-      `Hi ${name},`, ``,
-      `Here's your Outrank Audit${dealer ? " for " + dealer : ""}.`,
+      `Outrank Audit${dealer ? " for " + dealer : ""}`,
       `Site analyzed: ${state.url}`,
-      `Trade area:    ${state.city}`,
-      `Make detected: ${state.make}`, ``,
+      `Trade area:    ${state.city || "—"}`, ``,
       `═══════════════════════`,
-      `ESTIMATED MONTHLY DAMAGE:  $${dmg.damage.toLocaleString()}`,
-      `Your estimated SERP rank:  #${dmg.yourRank}`,
-      `Lost clicks/month:         ${dmg.lostClicks.toLocaleString()}`,
-      `Lost leads/month:          ${dmg.lostLeads.toLocaleString()}`,
+      `ESTIMATED MONTHLY DAMAGE:  $${shown.toLocaleString()}`,
+      `Estimated SERP rank:       #${dmg.yourRank}`,
+      `Lost clicks / month:       ${(dmg.lostClicks || 0).toLocaleString()}`,
+      `Lost leads / month:        ${(dmg.lostLeads || 0).toLocaleString()}`,
       `═══════════════════════`, ``,
-      `Your composite score: ${you.total}/60`,
-      `  • SEO:  ${you.seo}/20`,
-      `  • AEO:  ${you.aeo}/20`,
-      `  • GEO:  ${you.geo}/20`, ``,
-      `Rooftops ahead of you:`,
+      `Composite score: ${you.total}/60   (SEO ${you.seo} · AEO ${you.aeo} · GEO ${you.geo}, each /20)`,
+      ``,
+      `Rooftops ahead of us:`,
     ];
-    state.competitorScores.forEach((c: any, i: number) => {
+    (state.competitorScores || []).slice(0, 3).forEach((c: any, i: number) => {
       lines.push(`  ${i + 1}. ${c.host} — ${c.scores.total}/60  (SEO ${c.scores.seo} · AEO ${c.scores.aeo} · GEO ${c.scores.geo})`);
     });
     lines.push(``,
-      `Want to close the gap? Book a strategy call:`,
+      `The fix plan is free on a 20-minute strategy call:`,
       BOOK_CALL_URL, ``,
-      `— A3 Brands · GALAXY Outrank Audit`,
+      `— A3 Brands · Outrank Audit`,
     );
-    const body = lines.join("\n");
-    const href = `mailto:${encodeURIComponent(leadEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = href;
+    return { subject, body: lines.join("\n") };
+  }
+
+  $("ctaEmail")?.addEventListener("click", () => {
+    const leadEmail = ($("leadEmail") as HTMLInputElement)?.value.trim() || "";
+    const { subject, body } = buildReportText();
+    window.location.href = `mailto:${encodeURIComponent(leadEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
+
+  // Share with my GM — native share sheet where available (mobile), otherwise a
+  // pre-addressed-to-nobody email so the dealer fills in their GM. Same
+  // problem-and-cost-only artifact.
+  $("ctaShare")?.addEventListener("click", async () => {
+    const { subject, body } = buildReportText();
+    const nav: any = typeof navigator !== "undefined" ? navigator : null;
+    if (nav && typeof nav.share === "function") {
+      try { await nav.share({ title: subject, text: body, url: BOOK_CALL_URL }); return; }
+      catch (err) { console.warn("Share cancelled/failed, falling back to mailto:", err); }
+    }
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
 
   // User-activity log. Today: fetched from /api/leads (JSON file on the server).

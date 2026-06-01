@@ -361,6 +361,8 @@ export default function Page() {
         <div className="result-wrap">
           <div className="band-header">
             <div className="band-name" id="bandName">— —</div>
+            <h2 className="result-headline" id="resultHeadline"></h2>
+            <p className="result-subline" id="resultSubline"></p>
           </div>
 
           {/* THE DAMAGE */}
@@ -376,6 +378,12 @@ export default function Page() {
               <span className="period"> / mo</span>
             </div>
             <p className="damage-verdict" id="damageVerdict">Calculating…</p>
+            {/* Live ticker — money lost since the report opened, incrementing in
+                real time from the monthly figure (capped so it can't run wild). */}
+            <div className="damage-ticker" id="damageTicker" hidden>
+              <span className="damage-ticker-label">Lost since you opened this report</span>
+              <span className="damage-ticker-val" id="damageTickerVal">$0.00</span>
+            </div>
           </div>
 
           {/* LEADERBOARD */}
@@ -385,6 +393,17 @@ export default function Page() {
               <div className="lb-trade" id="lbTrade">Trade area · <b>—</b></div>
             </div>
             <div id="lbBody"></div>
+          </div>
+
+          {/* LOCKED GAPS — diagnosis is free, the playbook is not. Each card
+              names a specific, provable gap; the fix itself is never rendered
+              into the DOM. Built by renderLockedGaps(). */}
+          <div className="locked-gaps">
+            <div className="locked-gaps-header">
+              <div className="fixes-eyebrow">What I&apos;d fix first</div>
+              <div className="fixes-title">Your top 3 gaps</div>
+            </div>
+            <div className="locked-gaps-grid" id="lockedGaps"></div>
           </div>
 
           {/* SUBMISSIONS LOG (sales-only) */}
@@ -451,9 +470,13 @@ export default function Page() {
             <ol className="fixes-list" id="fixesList"></ol>
           </div>
 
-          <div className="cta-row">
-            <button className="cta-primary" id="ctaBook">Book My Strategy Call →</button>
-            <button className="cta-secondary" id="ctaEmail">Email My Report</button>
+          <div className="cta-stack">
+            <button className="cta-primary" id="ctaBook">Book my strategy call →</button>
+            <div className="cta-secondary-row">
+              <button className="cta-secondary" id="ctaEmail">Email my report</button>
+              <button className="cta-secondary" id="ctaShare">Share with my GM</button>
+            </div>
+            <div className="cta-note">Send the report up the chain — it makes your case for you.</div>
           </div>
         </div>
       </section>
