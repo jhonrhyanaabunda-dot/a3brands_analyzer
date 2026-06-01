@@ -1028,7 +1028,7 @@ export function initAudit() {
           setLeadError(`That ${which} already exists — try another.`);
           const focusId = field === "name" ? "leadName" : "leadEmail";
           ($(focusId) as HTMLInputElement | null)?.focus();
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Reveal The Leaderboard →"; }
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Show me the full damage →"; }
           return;
         }
         if (!res.ok) {
@@ -1065,7 +1065,7 @@ export function initAudit() {
     }
     show("screen-result");
 
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Reveal The Leaderboard →"; }
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Show me the full damage →"; }
   });
 
   function renderResultMinimal() {

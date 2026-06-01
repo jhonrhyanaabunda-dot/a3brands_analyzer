@@ -541,8 +541,11 @@ body::after {
   margin-bottom: 40px;
 }
 .lead-preview {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(124, 179, 66, 0.2);
+  /* Bad-news framing: warning-red surface so the figure lands as a loss */
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(226, 92, 62, 0.16), transparent 65%),
+    rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(226, 92, 62, 0.32);
   border-radius: 16px;
   padding: 20px 24px;
   margin-bottom: 24px;
@@ -553,14 +556,14 @@ body::after {
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--lime);
+  color: var(--red-glow);
   margin-bottom: 8px;
 }
 .lead-preview-stat {
   font-family: var(--display);
   font-weight: 800;
   font-size: 36px;
-  color: var(--white);
+  color: var(--red-glow);
   letter-spacing: -0.02em;
 }
 .lead-preview-sub {

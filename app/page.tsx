@@ -282,18 +282,18 @@ export default function Page() {
       <section className="screen" id="screen-leadcap">
         <div className="lead-wrap">
           <div className="lead-eyebrow">
-            <div className="eyebrow">Audit Complete · Report Ready</div>
+            <div className="eyebrow">Audit complete · this one stings</div>
           </div>
           <h2 className="lead-headline">
-            Saggy found <span className="accent" id="leadCompCount">3</span> rooftops ahead of you.
+            Bad news — <span className="accent" id="leadCompCount">3</span> rooftops are outranking you right now.
           </h2>
           <p className="lead-sub">
-            Tell us where to send the breakdown. We&apos;ll email the leaderboard, the gap analysis, and the action plan to flip it.
+            And every month that gap stays open, they&apos;re pocketing the shoppers who should&apos;ve landed in your showroom. Tell Saggy where to send the full breakdown — the leaderboard, the exact gaps, and the dollars walking out the door.
           </p>
           <div className="lead-preview" id="leadPreview" hidden>
-            <div className="lead-preview-label">Estimated Monthly Damage</div>
+            <div className="lead-preview-label">What it&apos;s costing you — every month</div>
             <div className="lead-preview-stat" id="leadPreviewStat">$—</div>
-            <div className="lead-preview-sub">Lost leads × $80 CPL · Full math inside</div>
+            <div className="lead-preview-sub">Lost leads × $80 CPL · and it compounds every month you wait</div>
           </div>
           <form className="lead-form" id="leadForm" autoComplete="on" noValidate>
             <div className="hp-field" aria-hidden="true">
@@ -319,7 +319,7 @@ export default function Page() {
               </div>
             </div>
             <div className="url-error" id="leadError" style={{ marginTop: 0 }}></div>
-            <button type="submit" className="full-cta" id="leadSubmitBtn">Reveal The Leaderboard →</button>
+            <button type="submit" className="full-cta" id="leadSubmitBtn">Show me the full damage →</button>
             <div className="lead-fineprint">We&apos;ll never share your info. One follow-up email, then you&apos;re in control.</div>
           </form>
         </div>
