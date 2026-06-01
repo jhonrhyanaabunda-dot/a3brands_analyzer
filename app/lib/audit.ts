@@ -197,49 +197,69 @@ export function initAudit() {
     }
   }
 
+  // Pull the real organic result hosts out of a DuckDuckGo HTML SERP (proxied
+  // through r.jina.ai so the browser can read it cross-origin). DDG wraps every
+  // organic link in a `uddg=<encoded-destination>` redirect, and routes ads
+  // through y.js / bing.com/aclick — so we decode uddg and drop the ad domains.
+  // (The old code requested X-Return-Format:text, which strips every link, and
+  // matched bare https:// hosts — which is why discovery always came back empty
+  // and the funnel fell through to placeholder rooftops.)
+  function extractDealerHostsFromSerp(serp: string, ownHost: string, accept: (h: string) => boolean): string[] {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    const consider = (raw: string) => {
+      const hm = /^https?:\/\/(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})/i.exec(raw);
+      if (!hm) return;
+      const host = hm[1].toLowerCase().replace(/^www\./, "");
+      if (host === ownHost || seen.has(host)) return;
+      if (NON_DEALER_HOSTS.has(host)) return;
+      if (/duckduckgo|google|bing|youtube|facebook|instagram|yelp|yellowpages|wikipedia|amazonaws|cloudflare|jina|gstatic|w3\.org|chamberofcommerce|mapquest|tripadvisor/.test(host)) return;
+      for (const agg of NON_DEALER_HOSTS) { if (host.endsWith("." + agg)) return; }
+      if (!accept(host)) return;
+      seen.add(host);
+      out.push(host);
+    };
+    // 1) Organic results: uddg=<encoded real URL>, skipping ad redirects.
+    for (const m of serp.matchAll(/uddg=([^&"')\s]+)/gi)) {
+      let dest = "";
+      try { dest = decodeURIComponent(m[1]); } catch { continue; }
+      if (/duckduckgo\.com\/y\.js|bing\.com\/aclick|\/y\.js\b/i.test(dest)) continue; // ads
+      consider(dest);
+    }
+    // 2) Belt-and-suspenders: any bare hosts present in the markup.
+    for (const m of serp.matchAll(/https?:\/\/(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}/gi)) consider(m[0]);
+    return out;
+  }
+
   async function discoverCompetitors(make: string, city: string, ownUrl: string) {
     const ownHost = hostnameOf(ownUrl);
-    const queries = [
-      `${make} dealer near ${city}`,
-      `${make} dealership ${city}`,
-      `best ${make} dealer ${city}`,
-    ];
-    const found = new Map<string, number>();
+    const loc = (city || "").trim();
+    const queries = loc
+      ? [`${make} dealer near ${loc}`, `${make} dealership ${loc}`, `best ${make} dealer ${loc}`]
+      : [`${make} dealer near me`, `${make} dealership`];
+    const isDealerHost = (host: string) =>
+      BRAND_KEYWORDS.some((b) => host.includes(b.replace(/ /g, ""))) ||
+      /dealer|auto|motor|cars?\b|cdjr|ford|gmc|chevy|hyundai|kia/.test(host);
+
+    const found: string[] = [];
+    const seen = new Set<string>();
     for (const q of queries) {
       const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`;
-      let text = "";
+      let serp = "";
       try {
-        const res: any = await timeoutFetch("https://r.jina.ai/" + url, {
-          headers: { "X-Return-Format": "text" },
-        }, 15000);
-        if (res.ok) text = await res.text();
+        // Default reader format (markdown) — keeps the result links we need.
+        const res: any = await timeoutFetch("https://r.jina.ai/" + url, {}, 15000);
+        if (res.ok) serp = await res.text();
       } catch (err) {
         console.warn("Competitor search failed for query:", q, err);
       }
-      if (!text) continue;
-
-      const hostMatches = [...text.matchAll(/https?:\/\/(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})/gi)];
-      let rank = 0;
-      for (const m of hostMatches) {
-        const host = m[1].toLowerCase().replace(/^www\./, "");
-        if (host === ownHost) continue;
-        if (NON_DEALER_HOSTS.has(host)) continue;
-        if (/duckduckgo|google|bing|youtube|facebook|instagram|yelp|yellowpages|wikipedia|amazonaws|cloudflare|jina|gstatic|w3\.org/.test(host)) continue;
-        let aggregator = false;
-        for (const agg of NON_DEALER_HOSTS) {
-          if (host.endsWith("." + agg)) { aggregator = true; break; }
-        }
-        if (aggregator) continue;
-        const looksLikeDealer = BRAND_KEYWORDS.some((b) => host.includes(b.replace(/ /g, ""))) ||
-          /dealer|auto|motor|cars?\b|cdjr|ford|gmc|chevy|hyundai|kia/.test(host);
-        if (!looksLikeDealer) continue;
-        if (!found.has(host)) found.set(host, rank);
-        rank++;
-        if (found.size >= 8) break;
+      if (!serp) continue;
+      for (const host of extractDealerHostsFromSerp(serp, ownHost, isDealerHost)) {
+        if (!seen.has(host)) { seen.add(host); found.push(host); }
       }
-      if (found.size >= 5) break;
+      if (found.length >= 5) break;
     }
-    return [...found.keys()].slice(0, 3).map((h) => "https://" + h);
+    return found.slice(0, 3).map((h) => "https://" + h);
   }
 
   const GEO_AUDITS = [
@@ -632,6 +652,12 @@ export function initAudit() {
     scanCtl.skipped = false;
     scanCtl.advanced = false;
 
+    // Coordination promises: discovery waits for the dealer's stated city, and
+    // the rival question waits for discovery to return real local hosts.
+    state.discoveredHosts = [];
+    state.cityReady = new Promise((r) => { state._resolveCityReady = r; });
+    state.competitorReady = new Promise((r) => { state._resolveCompetitorReady = r; });
+
     // Reset the interactive UI for a fresh run (matters when re-auditing).
     document.querySelectorAll(".goal-card").forEach((c) => c.classList.remove("selected"));
     $("goalBlock")?.removeAttribute("hidden");
@@ -658,10 +684,22 @@ export function initAudit() {
     // one, otherwise the extracted city (or neutral).
     reportPhase(1, state.city || "neutral");
 
+    // Hold discovery until the dealer tells us their market (city chip) so the
+    // rooftops we find are actually local — but never wait forever.
+    await Promise.race([state.cityReady ?? Promise.resolve(), wait(12000)]);
+
     let competitors: string[] = [];
     try { competitors = await discoverCompetitors(state.make, state.city, state.url); }
     catch (err) { console.warn("competitor discovery failed:", err); }
+
+    // Real discovered hosts drive the rival chips (never the placeholders).
+    const realHosts = competitors.map((u) => hostnameOf(u));
+    state.discoveredHosts = realHosts;
+    state._resolveCompetitorReady?.(realHosts);
+
     if (!competitors.length) {
+      // Scoring/leaderboard still needs three rooftops; clearly-labeled
+      // estimates (never shown as rival chips, which only use real hosts).
       const slug = (state.city ? state.city.split(",")[0] : "").replace(/\s+/g, "").toLowerCase();
       state.competitorUrls = [
         `${state.make}of${slug || "yourtown"}.com`,
@@ -740,6 +778,9 @@ export function initAudit() {
         state.cityConfidence = "manual";
         scanCtl.cityDone = true;
         scanCtl.stepDetail[1] = value || "neutral";
+        // Release discovery now that we know the dealer's market, so the rival
+        // chips are found near the city they just told us.
+        state._resolveCityReady?.(value);
         advanceTo(2);
         setSpeech(value
           ? `${value} — got it. That sharpens the trade-area math.`
@@ -781,13 +822,21 @@ export function initAudit() {
     setSpeech("Quick one — my read on your site couldn't pin your city for sure. Which market are you really fighting in?");
     renderChips(buildCityChips());
   }
-  function askRival() {
+  async function askRival() {
     if (scanCtl.advanced || scanCtl.rivalDone) return;
     scanCtl.chipStage = "rival";
     $("chipBlock")?.removeAttribute("hidden");
     const q = $("chipQuestion"); if (q) q.textContent = "Who actually steals your deals?";
-    setSpeech("Last one — who actually steals your deals? Pick the rooftop that stings most.");
-    renderChips(buildRivalChips());
+    setSpeech("Last one — who actually steals your deals? Let me pull who's near you…");
+    renderChipsLoading();
+    // Wait for real discovery so the chips are actual local rooftops, not
+    // placeholders. Bounded so a slow/blocked search never strands the dealer.
+    const hosts: string[] = await Promise.race([
+      state.competitorReady ?? Promise.resolve(state.discoveredHosts || []),
+      wait(9000).then(() => state.discoveredHosts || []),
+    ]);
+    if (scanCtl.advanced || scanCtl.rivalDone || scanCtl.chipStage !== "rival") return;
+    renderChips(buildRivalChips(hosts));
   }
 
   function buildCityChips(): { label: string; value: string }[] {
@@ -804,11 +853,12 @@ export function initAudit() {
       { label: "Somewhere else", value: "" },
     ];
   }
-  function buildRivalChips(): { label: string; value: string }[] {
+  // hosts = real, discovered rooftop hostnames. If discovery came back empty we
+  // offer honest descriptors instead of inventing fake-looking domains.
+  function buildRivalChips(hosts: string[]): { label: string; value: string }[] {
     const chips: { label: string; value: string }[] = [];
-    (state.competitorUrls || []).slice(0, 3).forEach((u: string) => {
-      const host = hostnameOf(u);
-      chips.push({ label: host, value: host });
+    (hosts || []).slice(0, 3).forEach((h: string) => {
+      chips.push({ label: h, value: h });
     });
     if (!chips.length) {
       chips.push({ label: "The big franchise across town", value: "the big franchise across town" });
@@ -824,6 +874,10 @@ export function initAudit() {
       `<button type="button" class="chip" data-value="${escapeHTML(c.value)}">${escapeHTML(c.label)}</button>`
     ).join("");
   }
+  function renderChipsLoading() {
+    const row = $("chipRow");
+    if (row) row.innerHTML = '<button type="button" class="chip" disabled>finding your real rivals…</button>';
+  }
 
   function skipIntro() {
     if (scanCtl.advanced) return;
@@ -831,6 +885,8 @@ export function initAudit() {
     // a skipped intro just yields a less-personalized report, never a broken one.
     scanCtl.skipped = true;
     setSpeech("No problem — taking you straight to the numbers.");
+    // Let the background pipeline proceed even if the city was never answered.
+    state._resolveCityReady?.(state.city || "");
     drainComputeSteps();
     if (scanCtl.phasesDone >= 6) {
       maybeFinishScan();
