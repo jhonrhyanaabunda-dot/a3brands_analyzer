@@ -1947,8 +1947,8 @@ body.sales-view .gap-grid.sales-only { display: grid; }
   padding: 18px 20px;
   /* Playful comic-chat shape: three soft corners, tight by the tail */
   border-radius: 30px 30px 30px 8px;
-  background: #f6d23f;          /* sunny speech-bubble yellow */
-  color: #1a2a1f;
+  background: var(--lime);      /* brand green */
+  color: var(--green-darkest);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
   transform-origin: bottom left;
   /* pop in on each new line, then a gentle idle float so it feels alive */
@@ -1977,7 +1977,7 @@ body.sales-view .gap-grid.sales-only { display: grid; }
   height: 0;
   border-left: 7px solid transparent;
   border-right: 18px solid transparent;
-  border-top: 18px solid #f6d23f;
+  border-top: 18px solid var(--lime);
   border-bottom: 0;
 }
 /* The fix: give the figure + video a definite width (the old grid cell did
