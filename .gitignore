@@ -25,3 +25,5 @@ data/leads.json
 data/leads.json.tmp
 data/audit-cache.json
 data/audit-cache.json.tmp
+# TS incremental build cache
+tsconfig.tsbuildinfo
