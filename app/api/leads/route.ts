@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { addLead, clearLeads, findDuplicateLead, listLeads, LEAD_STATUSES, type LeadStatus } from "@/app/lib/storage";
+import { isAuthorized } from "@/app/lib/adminAuth";
+
+function unauthorized() {
+  return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+}
 
 // Force this route to run in the Node runtime (we need fs).
 export const runtime = "nodejs";
@@ -15,7 +20,9 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Reading the lead table exposes PII (names, emails, phones) — admin only.
+  if (!isAuthorized(req)) return unauthorized();
   try {
     const leads = await listLeads();
     return NextResponse.json({ ok: true, leads });
@@ -88,7 +95,9 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  // Destructive + reads nothing back, but still admin-only.
+  if (!isAuthorized(req)) return unauthorized();
   try {
     await clearLeads();
     return NextResponse.json({ ok: true });

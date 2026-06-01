@@ -1011,6 +1011,14 @@ export function initAudit() {
   let _leadsPage: number = 0;
   const PAGE_SIZE = 10;
 
+  // Sales-console secret. Captured from ?key=... in initViewMode and sent on
+  // every privileged /api/leads call so the (now auth-gated) endpoint answers.
+  // The public funnel never touches this — only the read/clear/status views do.
+  let _salesToken = "";
+  function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+    return _salesToken ? { Authorization: "Bearer " + _salesToken, ...extra } : { ...extra };
+  }
+
   function filterLeads(query: string, leads: any[]): any[] {
     const q = (query || "").trim().toLowerCase();
     if (!q) return leads;
@@ -1027,9 +1035,10 @@ export function initAudit() {
 
   async function fetchLeads(): Promise<any[]> {
     try {
-      const res = await fetch("/api/leads", { cache: "no-store" });
+      const res = await fetch("/api/leads", { cache: "no-store", headers: authHeaders() });
       if (!res.ok) {
-        console.warn("Lead fetch failed:", res.status);
+        if (res.status === 401) console.warn("Lead fetch unauthorized — add ?key=<ADMIN_TOKEN> to the sales URL.");
+        else console.warn("Lead fetch failed:", res.status);
         return [];
       }
       const data = await res.json();
@@ -1042,7 +1051,7 @@ export function initAudit() {
 
   async function clearLeadsRemote(): Promise<void> {
     try {
-      const res = await fetch("/api/leads", { method: "DELETE" });
+      const res = await fetch("/api/leads", { method: "DELETE", headers: authHeaders() });
       if (!res.ok) console.warn("Lead clear failed:", res.status);
     } catch (err) {
       console.warn("Lead clear threw:", err);
@@ -1159,6 +1168,18 @@ export function initAudit() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("view") !== "sales") return;
 
+      // Sales console is now gated server-side. The rep opens it with
+      // ?view=sales&key=<ADMIN_TOKEN>; the key is sent as a Bearer token on
+      // every privileged /api/leads call. Persist it for this tab so a refresh
+      // (which may drop the query string) keeps working.
+      const keyParam = (params.get("key") || "").trim();
+      if (keyParam) {
+        _salesToken = keyParam;
+        try { sessionStorage.setItem("salesToken", keyParam); } catch {}
+      } else {
+        try { _salesToken = sessionStorage.getItem("salesToken") || ""; } catch {}
+      }
+
       document.body.classList.add("sales-view");
       const badge = document.createElement("button");
       badge.type = "button";
@@ -1222,7 +1243,7 @@ export function initAudit() {
     try {
       const res = await fetch("/api/leads/" + encodeURIComponent(leadId), {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status }),
       });
       if (!res.ok) {
