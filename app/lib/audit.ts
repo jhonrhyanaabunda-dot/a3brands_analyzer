@@ -628,7 +628,7 @@ export function initAudit() {
     if (ready && interacted && scanCtl.activeStep >= 5 && scanCtl.stepDone[5]) {
       scanCtl.advanced = true;
       setScanPercent(100);
-      setSpeech("Boom — audit's locked. Some of this'll sting, but every gap is fixable. Here's where you stand…");
+      setSpeech("Aaand it's locked. Fair warning — a couple of these bite. But every single one is fixable…");
       setTimeout(goAfterScan, 700);
     }
   }
@@ -669,7 +669,7 @@ export function initAudit() {
     setScanPercent(0);
     renderScanSteps();
     state.scanComplete = false;
-    setSpeech(`Engine's running — I'm already tearing through ${hostnameOf(state.url)}. While I'm under the hood, what's your #1 goal?`);
+    setSpeech(`Nose to the ground — I'm already sniffing through ${hostnameOf(state.url)}. Point me somewhere: what's the #1 win you're after?`);
     runBackgroundPipeline();
   }
 
@@ -757,7 +757,7 @@ export function initAudit() {
         card.classList.add("selected");
         state.goal = label;
         const confirm = $("goalConfirm");
-        if (confirm) { confirm.textContent = `Love it — I'm leaning your whole report toward ${label}.`; confirm.removeAttribute("hidden"); }
+        if (confirm) { confirm.textContent = `Say less — I'm tuning this whole report to ${label}.`; confirm.removeAttribute("hidden"); }
         const first = !scanCtl.goalDone;
         scanCtl.goalDone = true;
         advanceTo(1);
@@ -783,16 +783,16 @@ export function initAudit() {
         state._resolveCityReady?.(value);
         advanceTo(2);
         setSpeech(value
-          ? `${value}? Oh, I know that battlefield. Sharpening your trade-area math now.`
-          : `No city, no problem — I'll keep the math honest with neutral numbers.`);
+          ? `${value}! I've chased deals on that turf. Recalibrating your math for it now.`
+          : `All good — I'll keep the numbers honest with a neutral read.`);
         setTimeout(askRival, 650);
       } else if (scanCtl.chipStage === "rival") {
         state.rival = value;
         scanCtl.rivalDone = true;
         advanceTo(3);
         setSpeech(value
-          ? `${value}, huh? Bold of them. I'll show you exactly where they're sneaking ahead.`
-          : `No worries — I'll sniff out whoever's actually ahead of you in the data.`);
+          ? `${value}? Pfft. I'll show you the exact spots they're slipping past you.`
+          : `No name? No problem — I'll dig up whoever's actually beating you.`);
         const q = $("chipQuestion"); if (q) q.textContent = "That's everything Saggy needs.";
         $("chipRow")?.querySelectorAll(".chip").forEach((c: any) => { c.disabled = true; });
         drainComputeSteps();
@@ -819,7 +819,7 @@ export function initAudit() {
     scanCtl.chipStage = "city";
     $("chipBlock")?.removeAttribute("hidden");
     const q = $("chipQuestion"); if (q) q.textContent = "Which market are you really fighting in?";
-    setSpeech("Quick one — your site played coy about your city. Where are you really fighting for deals?");
+    setSpeech("Your site got shy about its hometown. So spill it — which turf are you really battling for?");
     renderChips(buildCityChips());
   }
   async function askRival() {
@@ -827,7 +827,7 @@ export function initAudit() {
     scanCtl.chipStage = "rival";
     $("chipBlock")?.removeAttribute("hidden");
     const q = $("chipQuestion"); if (q) q.textContent = "Who actually steals your deals?";
-    setSpeech("Now the fun part — who keeps stealing your deals? Let me round up the usual suspects…");
+    setSpeech("Now my favorite part — who keeps poaching your buyers? Let me line up the suspects…");
     renderChipsLoading();
     // Wait for real discovery so the chips are actual local rooftops, not
     // placeholders. Bounded so a slow/blocked search never strands the dealer.
@@ -884,7 +884,7 @@ export function initAudit() {
     // Unanswered questions stay at their neutral defaults (current behaviour) —
     // a skipped intro just yields a less-personalized report, never a broken one.
     scanCtl.skipped = true;
-    setSpeech("Say no more — fast-forwarding you straight to the damage.");
+    setSpeech("Pedal down — skipping you straight to the damage report.");
     // Let the background pipeline proceed even if the city was never answered.
     state._resolveCityReady?.(state.city || "");
     drainComputeSteps();

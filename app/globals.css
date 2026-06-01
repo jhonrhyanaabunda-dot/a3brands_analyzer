@@ -1945,18 +1945,32 @@ body.sales-view .gap-grid.sales-only { display: grid; }
   font-size: 14.5px;
   line-height: 1.5;
   padding: 18px 20px;
-  border-radius: 24px;          /* chunky, rounded — matches the reference */
+  /* Playful comic-chat shape: three soft corners, tight by the tail */
+  border-radius: 30px 30px 30px 8px;
   background: #f6d23f;          /* sunny speech-bubble yellow */
   color: #1a2a1f;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
-  animation: bubblePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: bottom left;
+  /* pop in on each new line, then a gentle idle float so it feels alive */
+  animation:
+    bubblePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+    bubbleFloat 4.5s ease-in-out 0.5s infinite;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.intro-saggy .speech-bubble:hover {
+  transform: translateY(-3px) rotate(-0.8deg) scale(1.015);
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.5);
+}
+@keyframes bubbleFloat {
+  0%, 100% { transform: translateY(0) rotate(-0.6deg); }
+  50%      { transform: translateY(-5px) rotate(0.6deg); }
 }
 /* Chunky tail, offset left and leaning down — like the reference bubble */
 .intro-saggy .speech-bubble::after {
   content: '';
   top: auto;
   bottom: -16px;
-  left: 26px;
+  left: 24px;
   right: auto;
   transform: none;
   width: 0;
