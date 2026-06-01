@@ -2,7 +2,53 @@
 
 A self-contained, single-file HTML lead-gen audit for automotive dealers. Drop a dealership URL → Saggy (the mascot) audits the site against trade-area competitors → spits out a SAGGY composite score (SEO + AEO + GEO, each scored 0-20), a leaderboard, and an estimated monthly revenue loss.
 
-Currently lives in [`index.html`](index.html). The whole experience — markup, CSS, JS, and the embedded A3 logo — ships as one file. The mascot is the only external asset.
+> **Note:** the live product is the **Next.js app** under [`app/`](app/) (deployed on Vercel). The static [`index.html`](index.html) is the legacy single-file prototype and is no longer the source of truth. The sections below the next one still describe that prototype; see **The funnel (Next.js app)** first.
+
+## The funnel (Next.js app)
+
+Four stages:
+
+1. **URL input** — dealer drops their dealership URL.
+2. **Interactive intro + live scan** — instead of watching a spinner, the dealer drives the scan by tapping: pick a **#1 goal**, then answer Saggy's two chip questions (**city/market**, **top rival**). The six scan steps advance on those taps while the real audit runs in the background; a progress bar climbs on real progress and a `skip` link falls back to neutral defaults. Captured `goal` / `city` / `rival` persist onto the lead.
+3. **Lead-capture form** — name / dealership / email / phone, with the honeypot (`Company Website (leave blank)`) and the "we'll never share your info" line.
+4. **Reveal** — personalized damage figure (floored so it's never `$0/mo`) with a live "lost since you opened this" ticker, a leaderboard with the dealer ranked last behind three rooftops, and three **locked** gaps. The diagnosis is free; the fix stays behind the strategy call and is never rendered into the DOM. `Email my report` / `Share with my GM` produce a problem-and-cost-only artifact for forwarding up the chain.
+
+### Run it
+
+```bash
+cp .env.example .env.local   # fill in the values, then:
+npm install
+npm run dev                  # http://localhost:3000
+```
+
+### Environment
+
+| Var | Purpose |
+|---|---|
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Lead store (server-only). |
+| `ADMIN_TOKEN` | Secret that gates the privileged `/api/leads` calls (read / clear / status). |
+
+### Security — sales console is auth-gated
+
+Reading the lead table exposes PII (names, emails, phones). `GET`/`DELETE`/`PATCH` on `/api/leads` now require `ADMIN_TOKEN` (sent as `Authorization: Bearer …`); `POST` (the public funnel write) stays open. The endpoints **fail closed** when `ADMIN_TOKEN` is unset — they return `401` rather than leaking data. Open the sales console at:
+
+```
+/?view=sales&key=<ADMIN_TOKEN>
+```
+
+> Previously the console was protected only client-side (`?view=sales` toggled a CSS class) while `GET /api/leads` returned every lead with no auth — anyone could `curl` it. That exposure is now closed.
+
+### Required migration
+
+The lead record gained `goal` and `rival` columns. Apply once before deploying, or lead writes will fail:
+
+```bash
+# run scripts/migration-goal-rival.sql in the Supabase SQL editor
+```
+
+---
+
+The legacy prototype lives in [`index.html`](index.html). The whole experience — markup, CSS, JS, and the embedded A3 logo — ships as one file. The mascot is the only external asset.
 
 ## Quick start
 
