@@ -433,7 +433,10 @@ export function initAudit() {
     if (_saggyVoice) return _saggyVoice;
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
-    const preferred = ["Junior","Eddy","Reed","Flo","Rocko","Shelley","Aaron","Arthur","Rishi","Microsoft Guy","Google UK English Male"];
+    // Lighter, expressive voices first so the elevated pitch reads as a
+    // teenager. "Junior" is a child voice — keep it only as a last resort so
+    // it doesn't turn chipmunky under the higher pitch.
+    const preferred = ["Eddy","Reed","Flo","Rocko","Aaron","Arthur","Rishi","Google UK English Male","Microsoft Guy","Shelley","Junior"];
     for (const name of preferred) {
       const v = voices.find((x) => x.name.toLowerCase().includes(name.toLowerCase()) && /en[-_]/i.test(x.lang));
       if (v) { _saggyVoice = v; return v; }
@@ -460,7 +463,8 @@ export function initAudit() {
       const u = new SpeechSynthesisUtterance(text);
       const v = pickSaggyVoice();
       if (v) u.voice = v;
-      u.rate = 1.05; u.pitch = 1.25; u.volume = 1.0;
+      // Younger, teenage-sounding read: higher pitch + slightly quicker pace.
+      u.rate = 1.12; u.pitch = 1.5; u.volume = 1.0;
       u.onend = () => { if (_saggyKeepAlive) { clearInterval(_saggyKeepAlive); _saggyKeepAlive = null; } };
       u.onerror = u.onend;
       window.speechSynthesis.speak(u);
@@ -474,7 +478,11 @@ export function initAudit() {
   }
   function initAudioToggle() {
     const btn = $("audioToggle"); if (!btn) return;
-    try { if (localStorage.getItem("saggyAudio") === "1") { state.audioEnabled = true; btn.setAttribute("aria-pressed","true"); } } catch {}
+    // On by default — only off if the user explicitly muted it before.
+    let saggyPref: string | null = null;
+    try { saggyPref = localStorage.getItem("saggyAudio"); } catch {}
+    state.audioEnabled = saggyPref !== "0";
+    btn.setAttribute("aria-pressed", state.audioEnabled ? "true" : "false");
     if (!SAGGY_SUPPORTS_TTS) { (btn as HTMLButtonElement).disabled = true; btn.title = "Voice-over not supported here"; return; }
     btn.addEventListener("click", () => {
       state.audioEnabled = !state.audioEnabled;
