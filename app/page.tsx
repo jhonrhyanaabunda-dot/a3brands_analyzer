@@ -130,10 +130,10 @@ export default function Page() {
       <section className="screen" id="screen-scan">
         <div className="scan-wrap">
           <aside className="intro-panel">
-            {/* a) Brand intro header — niche focus is the trust signal */}
+            {/* a) Brand intro header — niche focus is the trust signal.
+                No logo here: the global top bar already shows it, so a second
+                one read as a doubled navbar. */}
             <div className="intro-brand">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="intro-brand-logo" src="/a3brands-logo.png" alt="A3 Brands" />
               <div className="intro-brand-text">
                 <div className="intro-brand-name">Automotive SEO experts</div>
                 <div className="intro-brand-tag">Dealerships are all we do.</div>
