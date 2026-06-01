@@ -1942,11 +1942,15 @@ body.sales-view .gap-grid.sales-only { display: grid; }
   z-index: 3;
   width: 100%;
   margin: 0 0 -30px;            /* mascot tucks up under the bubble = floating overlay */
-  font-size: 14.5px;
-  line-height: 1.5;
+  /* Punchy, friendly display type so the line feels like Saggy talking */
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
   padding: 18px 20px;
-  /* Playful comic-chat shape: three soft corners, tight by the tail */
-  border-radius: 30px 30px 30px 8px;
+  /* Playful comic-chat shape: three soft corners, tight by the tail (bottom-right) */
+  border-radius: 30px 30px 8px 30px;
   background: var(--lime);      /* brand green */
   color: var(--green-darkest);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
@@ -1965,18 +1969,18 @@ body.sales-view .gap-grid.sales-only { display: grid; }
   0%, 100% { transform: translateY(0) rotate(-0.6deg); }
   50%      { transform: translateY(-5px) rotate(0.6deg); }
 }
-/* Chunky tail, offset left and leaning down — like the reference bubble */
+/* Chunky tail on the right, leaning down toward the mascot */
 .intro-saggy .speech-bubble::after {
   content: '';
   top: auto;
   bottom: -16px;
-  left: 24px;
-  right: auto;
+  left: auto;
+  right: 24px;
   transform: none;
   width: 0;
   height: 0;
-  border-left: 7px solid transparent;
-  border-right: 18px solid transparent;
+  border-left: 18px solid transparent;
+  border-right: 7px solid transparent;
   border-top: 18px solid var(--lime);
   border-bottom: 0;
 }
