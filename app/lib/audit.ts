@@ -701,6 +701,7 @@ export function initAudit() {
 
     setScanPercent(0);
     renderScanSteps();
+    setQuizStep("goal");
     state.scanComplete = false;
     setSpeech(`Nose to the ground — I'm already sniffing through ${hostnameOf(state.url)}. Point me somewhere: what's the #1 win you're after?`);
     runBackgroundPipeline();
@@ -825,6 +826,7 @@ export function initAudit() {
       } else if (scanCtl.chipStage === "rival") {
         state.rival = value;
         scanCtl.rivalDone = true;
+        setQuizStep("done");
         advanceTo(3);
         setSpeech(value
           ? `${value}? Pfft. I'll show you the exact spots they're slipping past you.`
@@ -853,6 +855,7 @@ export function initAudit() {
   function askCity() {
     if (scanCtl.advanced || scanCtl.cityDone) return;
     scanCtl.chipStage = "city";
+    setQuizStep("city");
     $("chipBlock")?.removeAttribute("hidden");
     const q = $("chipQuestion"); if (q) q.textContent = "Which market are you really fighting in?";
     setSpeech("Your site got shy about its hometown. So spill it — which turf are you really battling for?");
@@ -861,6 +864,7 @@ export function initAudit() {
   async function askRival() {
     if (scanCtl.advanced || scanCtl.rivalDone) return;
     scanCtl.chipStage = "rival";
+    setQuizStep("rival");
     $("chipBlock")?.removeAttribute("hidden");
     const q = $("chipQuestion"); if (q) q.textContent = "Who actually steals your deals?";
     setSpeech("Now my favorite part — who keeps poaching your buyers? Let me line up the suspects…");
@@ -913,6 +917,17 @@ export function initAudit() {
   function renderChipsLoading() {
     const row = $("chipRow");
     if (row) row.innerHTML = '<button type="button" class="chip" disabled>finding your real rivals…</button>';
+  }
+
+  // Process tracker (Goal → Market → Rival): mark prior steps done, current
+  // active, so the dealer always knows where they are and what's left.
+  function setQuizStep(key: "goal" | "city" | "rival" | "done") {
+    const order = ["goal", "city", "rival"];
+    const idx = key === "done" ? order.length : order.indexOf(key);
+    document.querySelectorAll("#quizTrack .quiz-step").forEach((el: any, i: number) => {
+      el.classList.toggle("done", i < idx);
+      el.classList.toggle("active", i === idx);
+    });
   }
 
   function skipIntro() {

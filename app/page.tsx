@@ -203,18 +203,35 @@ export default function Page() {
 
               {/* RIGHT: pick #1 goal + chips + tour + proof */}
               <div className="intro-right">
+            {/* Process tracker — tells the dealer it's a quick 3-tap flow and
+                where they are in it. JS advances the active step. */}
+            <div className="quiz-track" id="quizTrack">
+              <div className="quiz-track-caption">3 quick taps while Saggy scans — they sharpen your report</div>
+              <div className="quiz-steps">
+                <span className="quiz-step active" data-q="goal"><i>1</i>Goal</span>
+                <span className="quiz-track-line" aria-hidden="true"></span>
+                <span className="quiz-step" data-q="city"><i>2</i>Market</span>
+                <span className="quiz-track-line" aria-hidden="true"></span>
+                <span className="quiz-step" data-q="rival"><i>3</i>Rival</span>
+              </div>
+            </div>
+
             {/* b) Pick your #1 goal — single-select, advances a scan step */}
             <div className="intro-block" id="goalBlock">
               <div className="intro-q">Pick your #1 goal</div>
+              <div className="intro-hint">Tap the one that matters most — Saggy weights your whole report toward it.</div>
               <div className="goal-cards" id="goalCards">
                 <button type="button" className="goal-card" data-goal-key="visibility" data-goal="being the first name shoppers find">
-                  Be the first name shoppers find — search, AI answers, the map.
+                  <span className="goal-card-text">Be the first name shoppers find — search, AI answers, the map.</span>
+                  <span className="goal-card-pick" aria-hidden="true">›</span>
                 </button>
                 <button type="button" className="goal-card" data-goal-key="traffic" data-goal="turning visibility into showroom traffic and phone-ups">
-                  Turn visibility into real showroom traffic and phone-ups.
+                  <span className="goal-card-text">Turn visibility into real showroom traffic and phone-ups.</span>
+                  <span className="goal-card-pick" aria-hidden="true">›</span>
                 </button>
                 <button type="button" className="goal-card" data-goal-key="efficiency" data-goal="winning the click without the biggest ad budget">
-                  Win the click without the biggest ad budget in town.
+                  <span className="goal-card-text">Win the click without the biggest ad budget in town.</span>
+                  <span className="goal-card-pick" aria-hidden="true">›</span>
                 </button>
               </div>
               <div className="intro-confirm" id="goalConfirm" hidden></div>
@@ -223,6 +240,7 @@ export default function Page() {
             {/* c) Saggy's two quick questions — chips, one at a time */}
             <div className="intro-block" id="chipBlock" hidden>
               <div className="intro-q" id="chipQuestion"></div>
+              <div className="intro-hint">Tap whichever is closest — no wrong answer.</div>
               <div className="chip-row" id="chipRow"></div>
             </div>
 
