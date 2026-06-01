@@ -153,9 +153,12 @@ export default function Page() {
               </div>
             </div>
 
-            {/* b) Saggy + speech bubble */}
-            <div className="intro-saggy">
-              <div className="speech-bubble" id="speechBubble">Give me a second — I&apos;m pulling up your trade area. While I dig, help me aim this thing.</div>
+            {/* Two columns: Saggy on the left, the interaction on the right */}
+            <div className="intro-cols">
+              {/* LEFT: Saggy + speech bubble */}
+              <div className="intro-left">
+                <div className="intro-saggy">
+                  <div className="speech-bubble" id="speechBubble">Give me a second — I&apos;m pulling up your trade area. While I dig, help me aim this thing.</div>
               <div className="saggy-figure">
                 <video
                   className="saggy-img"
@@ -194,9 +197,12 @@ export default function Page() {
                   </span>
                   <span className="audio-label">Saggy speaks</span>
                 </button>
+                  </div>
+                </div>
               </div>
-            </div>
 
+              {/* RIGHT: pick #1 goal + chips + tour + proof */}
+              <div className="intro-right">
             {/* b) Pick your #1 goal — single-select, advances a scan step */}
             <div className="intro-block" id="goalBlock">
               <div className="intro-q">Pick your #1 goal</div>
@@ -265,6 +271,8 @@ export default function Page() {
                 <div className="proof-stat-label">full coverage</div>
               </div>
               {/* TESTIMONIAL SLOT — drop a real dealer logo + one-line quote here. */}
+            </div>
+              </div>
             </div>
           </aside>
         </div>

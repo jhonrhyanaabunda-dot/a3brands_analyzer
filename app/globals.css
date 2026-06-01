@@ -261,7 +261,7 @@ body::after {
 
 /* ============ SCANNING ============ */
 .scan-wrap {
-  max-width: 760px;
+  max-width: 1040px;
   margin: 40px auto 0;
 }
 .scan-stage-card {
@@ -1909,39 +1909,55 @@ body.sales-view .gap-grid.sales-only { display: grid; }
   border-radius: 999px;
 }
 
-/* b) Saggy block — bubble beside the mascot */
-.intro-saggy {
+/* Two columns under the full-width header + progress bar:
+   Saggy on the left, the interaction (goal/chips/tour/proof) on the right. */
+.intro-cols {
   display: grid;
-  grid-template-columns: 1fr 150px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.intro-left { position: sticky; top: 100px; }
+.intro-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* b) Saggy block — bubble stacked above the mascot in the left column */
+.intro-saggy {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 14px;
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 18px;
-  padding: 18px 20px;
+  padding: 22px 20px;
 }
 .intro-saggy .speech-bubble {
   margin: 0;
+  width: 100%;
   font-size: 14.5px;
   padding: 18px 20px;
   border-radius: 16px;
 }
-/* Tail points right (toward Saggy) instead of down */
+/* Tail points down (toward the mascot below) */
 .intro-saggy .speech-bubble::after {
-  bottom: auto;
-  left: auto;
-  top: 50%;
-  right: -9px;
-  transform: translateY(-50%);
-  border-left: 10px solid var(--cream);
-  border-right: 0;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
+  top: auto;
+  bottom: -9px;
+  left: 36px;
+  right: auto;
+  transform: none;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 10px solid var(--cream);
+  border-bottom: 0;
 }
 .intro-saggy .saggy-figure { padding: 0; }
-.intro-saggy .saggy-img { width: 100%; max-width: 130px; }
+.intro-saggy .saggy-img { width: 100%; max-width: 170px; }
 .intro-saggy-foot {
-  grid-column: 2 / 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2095,17 +2111,11 @@ body.sales-view .gap-grid.sales-only { display: grid; }
 }
 
 @media (max-width: 880px) {
-  .intro-saggy { grid-template-columns: 1fr; }
-  .intro-saggy .speech-bubble::after {
-    top: auto; bottom: -9px; right: auto; left: 40px;
-    transform: none;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 10px solid var(--cream);
-    border-bottom: 0;
-  }
-  .intro-saggy-foot { grid-column: 1 / 2; flex-direction: row; justify-content: center; gap: 16px; }
-  .intro-saggy .saggy-img { max-width: 110px; }
+  /* Stack the two columns: Saggy on top, interaction below */
+  .intro-cols { grid-template-columns: 1fr; gap: 20px; }
+  .intro-left { position: static; }
+  .intro-saggy-foot { flex-direction: row; justify-content: center; gap: 16px; }
+  .intro-saggy .saggy-img { max-width: 150px; }
 }
 @media (max-width: 640px) {
   .intro-while { margin-left: 0; }
