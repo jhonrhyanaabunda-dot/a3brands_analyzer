@@ -158,7 +158,7 @@ export default function Page() {
               {/* LEFT: Saggy + speech bubble */}
               <div className="intro-left">
                 <div className="intro-saggy">
-                  <div className="speech-bubble" id="speechBubble">Give me a second — I&apos;m pulling up your trade area. While I dig, help me aim this thing.</div>
+                  <div className="speech-bubble" id="speechBubble">Buckle up — I&apos;m already nose-deep in your site. Help me aim this while I dig: what&apos;s your #1 goal?</div>
               <div className="saggy-figure">
                 <video
                   className="saggy-img"
