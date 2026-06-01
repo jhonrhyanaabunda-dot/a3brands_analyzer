@@ -123,11 +123,15 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ============ SCREEN 2: SCANNING ============ */}
+      {/* ============ SCREEN 2: INTERACTIVE INTRO + LIVE SCAN ============ */}
+      {/* The six scan steps still run, but they advance on the dealer's taps
+          (goal → city → rival) while the real audit runs in the background —
+          no fixed-timer spinner. Left = scan progress, right = Saggy + intro. */}
       <section className="screen" id="screen-scan">
         <div className="scan-wrap">
+          {/* LEFT: live scan progress */}
           <div className="scan-stage-card">
-            <div className="scan-eyebrow"><span className="live-dot"></span>Live Audit In Progress</div>
+            <div className="scan-eyebrow"><span className="live-dot"></span>Live audit in progress</div>
             <h2 className="scan-title">Saggy&apos;s on the hunt.</h2>
             <ul className="scan-steps" id="scanSteps">
               <li className="scan-step" data-step="0">
@@ -161,47 +165,146 @@ export default function Page() {
                 <div className="step-detail">—</div>
               </li>
             </ul>
+
+            {/* f) Background scan indicator — climbs as real work lands */}
+            <div className="scan-progress">
+              <div className="scan-progress-track">
+                <div className="scan-progress-fill" id="scanBarFill"></div>
+              </div>
+              <div className="scan-progress-meta">
+                <span id="scanPercent">0%</span>
+                <span className="scan-progress-note">Saggy&apos;s still scanning underneath this</span>
+              </div>
+              <button type="button" className="scan-skip" id="scanSkip">skip — take me straight to the audit</button>
+            </div>
           </div>
 
-          <aside className="saggy-panel">
-            <div className="speech-bubble" id="speechBubble">Hold on, let me pull up your trade area...</div>
-            <div className="saggy-figure">
-              <video
-                className="saggy-img"
-                id="saggyImg"
-                autoPlay
-                loop
-                muted
-                playsInline
-                aria-label="Saggy, A3 Brands mascot"
-              >
-                <source src="/saggy_mascot.webm" type="video/webm" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/saggy_mascot.webp" alt="Saggy, A3 Brands mascot" />
-              </video>
+          {/* RIGHT: Saggy + interaction */}
+          <aside className="intro-panel">
+            {/* a) Brand intro header — niche focus is the trust signal */}
+            <div className="intro-brand">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="intro-brand-logo" src="/a3brands-logo.png" alt="A3 Brands" />
+              <div className="intro-brand-text">
+                <div className="intro-brand-name">Automotive SEO experts</div>
+                <div className="intro-brand-tag">Dealerships are all we do.</div>
+              </div>
+              <div className="intro-while">While Saggy scans…</div>
             </div>
-            <div className="saggy-name">SAGGY · On Patrol</div>
-            <button
-              type="button"
-              className="audio-toggle"
-              id="audioToggle"
-              aria-pressed="false"
-              aria-label="Toggle Saggy voice-over"
-            >
-              <span className="audio-icon" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                  <path
-                    className="audio-waves"
-                    d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-              <span className="audio-label">Saggy speaks</span>
-            </button>
+
+            {/* b) Saggy + speech bubble */}
+            <div className="intro-saggy">
+              <div className="speech-bubble" id="speechBubble">Give me a second — I&apos;m pulling up your trade area. While I dig, help me aim this thing.</div>
+              <div className="saggy-figure">
+                <video
+                  className="saggy-img"
+                  id="saggyImg"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  aria-label="Saggy, A3 Brands mascot"
+                >
+                  <source src="/saggy_mascot.webm" type="video/webm" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/saggy_mascot.webp" alt="Saggy, A3 Brands mascot" />
+                </video>
+              </div>
+              <div className="intro-saggy-foot">
+                <div className="saggy-name">Saggy · on patrol</div>
+                <button
+                  type="button"
+                  className="audio-toggle"
+                  id="audioToggle"
+                  aria-pressed="false"
+                  aria-label="Toggle Saggy voice-over"
+                >
+                  <span className="audio-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                      <path
+                        className="audio-waves"
+                        d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+                  <span className="audio-label">Saggy speaks</span>
+                </button>
+              </div>
+            </div>
+
+            {/* b) Pick your #1 goal — single-select, advances a scan step */}
+            <div className="intro-block" id="goalBlock">
+              <div className="intro-q">Pick your #1 goal</div>
+              <div className="goal-cards" id="goalCards">
+                <button type="button" className="goal-card" data-goal="being the first name shoppers find">
+                  Be the first name shoppers find — search, AI answers, the map.
+                </button>
+                <button type="button" className="goal-card" data-goal="turning visibility into showroom traffic and phone-ups">
+                  Turn visibility into real showroom traffic and phone-ups.
+                </button>
+                <button type="button" className="goal-card" data-goal="winning the click without the biggest ad budget">
+                  Win the click without the biggest ad budget in town.
+                </button>
+              </div>
+              <div className="intro-confirm" id="goalConfirm" hidden></div>
+            </div>
+
+            {/* c) Saggy's two quick questions — chips, one at a time */}
+            <div className="intro-block" id="chipBlock" hidden>
+              <div className="intro-q" id="chipQuestion"></div>
+              <div className="chip-row" id="chipRow"></div>
+            </div>
+
+            {/* d) Tappable quick tour — what happens next, never how it's fixed */}
+            <div className="intro-tour">
+              <div className="intro-q intro-q-quiet">How this works</div>
+              <div className="tour-steps" id="tourSteps">
+                <button type="button" className="tour-step active" data-detail="You&apos;re here. Saggy benchmarks you against the rooftops winning your trade area — no cost, no commitment.">
+                  <span className="tour-step-num">1</span>
+                  <span className="tour-step-label">Free audit<small>you&apos;re here</small></span>
+                  <span className="tour-chev" aria-hidden="true">›</span>
+                </button>
+                <button type="button" className="tour-step" data-detail="We walk you through where you&apos;re losing ground and what we&apos;d prioritize first. Still free, no obligation.">
+                  <span className="tour-step-num">2</span>
+                  <span className="tour-step-label">Strategy call<small>your fixes, free</small></span>
+                  <span className="tour-chev" aria-hidden="true">›</span>
+                </button>
+                <button type="button" className="tour-step" data-detail="If it&apos;s a fit, our automotive-only team does the heavy lifting across SEO, AEO and GEO. You stay focused on selling cars.">
+                  <span className="tour-step-num">3</span>
+                  <span className="tour-step-label">We execute<small>we do the work</small></span>
+                  <span className="tour-chev" aria-hidden="true">›</span>
+                </button>
+                <button type="button" className="tour-step" data-detail="You start showing up where shoppers actually look — and the rooftops that were ahead of you aren&apos;t anymore.">
+                  <span className="tour-step-num">4</span>
+                  <span className="tour-step-label">You climb<small>past the rivals</small></span>
+                  <span className="tour-chev" aria-hidden="true">›</span>
+                </button>
+              </div>
+              <div className="tour-detail" id="tourDetail">You&apos;re here. Saggy benchmarks you against the rooftops winning your trade area — no cost, no commitment.</div>
+            </div>
+
+            {/* e) Proof stats — PLACEHOLDER NUMBERS: A3 to swap in real figures.
+                A real dealer logo / one-line testimonial here would outperform
+                these stats — the testimonial slot below is left ready for it. */}
+            <div className="intro-proof">
+              <div className="proof-stat">
+                <div className="proof-stat-num">200+</div>
+                <div className="proof-stat-label">rooftops audited</div>
+              </div>
+              <div className="proof-stat">
+                <div className="proof-stat-num">100%</div>
+                <div className="proof-stat-label">automotive only</div>
+              </div>
+              <div className="proof-stat">
+                <div className="proof-stat-num">SEO·AEO·GEO</div>
+                <div className="proof-stat-label">full coverage</div>
+              </div>
+              {/* TESTIMONIAL SLOT — drop a real dealer logo + one-line quote here. */}
+            </div>
           </aside>
         </div>
       </section>

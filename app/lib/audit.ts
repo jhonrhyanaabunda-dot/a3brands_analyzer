@@ -30,6 +30,14 @@ export function initAudit() {
   const LEAD_CONVERSION_RATE = 0.03;
   const DEFAULT_TRADE_AREA_VOLUME = 1800;
 
+  // The headline figure must never read "$0 / mo" — that kills the whole
+  // premise. Floor it at a credible minimum (≈6 leads × $80 CPL) so even a
+  // strong dealer sees real money "at risk" worth a strategy call.
+  const MIN_DISPLAY_DAMAGE = 480;
+  function displayDamage(raw: number): number {
+    return Math.max(Math.round(Number(raw) || 0), MIN_DISPLAY_DAMAGE);
+  }
+
   const BANDS = [
     { min: 90, name: "Trade Area Champ", verdict: (_gap, _host) => `You're already running the trade area. Nobody in your zip is touching this. Now let's lock the lead before someone closes the gap.` },
     { min: 75, name: "Solid Ground",     verdict: (_gap, host) => `You're in good shape but <b>${host}</b> is finding ways to chip at you. Closeable. Don't let it slide.` },
@@ -470,13 +478,14 @@ export function initAudit() {
     // unreachable sites on its own; no third-party pre-flight needed.
     state.make = detectMakeFromUrl(url as string) || "automotive";
 
-    // Fire the location extractor in parallel with the scanning theater.
-    // runScanSequence awaits state.extractPromise before step 1 so the
-    // "Trade area locked in — X, Y" beat reads the real city when available.
+    // Fire the location extractor in parallel with the interactive intro.
+    // The background pipeline awaits state.extractPromise before finishing
+    // the "reading your site" step so the city read is the real one when
+    // available; the dealer's chip answer can still override it.
     state.extractPromise = fetchLocation(url as string);
 
     show("screen-scan");
-    runScanSequence();
+    startScan();
   }
 
   async function fetchLocation(url: string): Promise<void> {
@@ -501,129 +510,336 @@ export function initAudit() {
     }
   }
 
-  async function runScanSequence() {
+  // ============================================================
+  //   STAGE 2 — interactive intro + live scan
+  //   The dealer drives the first three steps by tapping (goal → city →
+  //   rival). The real audit runs in the background and fills in the
+  //   compute-only steps (scoring you → scoring rivals → the leak) as data
+  //   lands. No fixed-timer spinner — the bar climbs on real progress, and
+  //   the dealer is never sitting idle.
+  // ============================================================
+  const scanCtl: any = {
+    activeStep: 0,
+    stepDetail: ["", "", "", "", "", ""],
+    stepDone: [false, false, false, false, false, false],
+    phasesDone: 0,            // real background phases completed (0..6)
+    goalDone: false, cityDone: false, rivalDone: false,
+    chipStage: null as null | "city" | "rival",
+    skipped: false,
+    advanced: false,
+  };
+  const answeredCount = () => (scanCtl.goalDone ? 1 : 0) + (scanCtl.cityDone ? 1 : 0) + (scanCtl.rivalDone ? 1 : 0);
+
+  function renderScanSteps() {
     const steps = document.querySelectorAll(".scan-step");
-    const setStep = (idx: number, status: string, detail?: string) => {
-      steps.forEach((el, i) => {
-        el.classList.remove("active", "done");
-        if (i < idx) el.classList.add("done");
-        else if (i === idx) el.classList.add("active");
-      });
-      if (detail !== undefined) {
-        const detailEl = steps[idx]?.querySelector(".step-detail");
-        if (detailEl) detailEl.textContent = detail;
-      }
-      if (status === "active") {
-        const marker = steps[idx]?.querySelector(".step-marker");
-        if (marker) marker.innerHTML = '<div class="spinner"></div>';
-      } else if (status === "done") {
-        const marker = steps[idx]?.querySelector(".step-marker");
+    steps.forEach((el, i) => {
+      el.classList.remove("active", "done");
+      const marker = el.querySelector(".step-marker");
+      const detailEl = el.querySelector(".step-detail");
+      const detail = scanCtl.stepDetail[i];
+      if (scanCtl.stepDone[i] || i < scanCtl.activeStep) {
+        el.classList.add("done");
         if (marker) marker.innerHTML = "✓";
+        if (detailEl) detailEl.textContent = detail || "done";
+      } else if (i === scanCtl.activeStep) {
+        el.classList.add("active");
+        if (marker) marker.innerHTML = '<div class="spinner"></div>';
+        if (detailEl) detailEl.textContent = detail || "working…";
+      } else {
+        if (marker) marker.innerHTML = String(i + 1);
+        if (detailEl) detailEl.textContent = "—";
       }
-    };
-    const finishStep = (idx: number, detail?: string) => {
-      steps[idx].classList.remove("active");
-      steps[idx].classList.add("done");
-      const marker = steps[idx].querySelector(".step-marker");
-      if (marker) marker.innerHTML = "✓";
-      if (detail) {
-        const detailEl = steps[idx].querySelector(".step-detail");
-        if (detailEl) detailEl.textContent = detail;
-      }
-    };
+    });
+  }
 
-    setStep(0, "active", "reading…");
-    setSpeech(`Alright, I'm pulling up ${hostnameOf(state.url)} now. Let me see what we're working with.`);
-    // Wait for the parallel extract to settle before announcing the trade area
-    // — but never block longer than the read animation itself, so the funnel
-    // can't stall on a slow extractor.
-    await Promise.race([
-      state.extractPromise ?? Promise.resolve(),
-      wait(900),
-    ]);
-    await state.extractPromise?.catch(() => {});
-    finishStep(0, hostnameOf(state.url));
+  function setScanPercent(p: number) {
+    const pct = Math.max(0, Math.min(100, Math.round(p)));
+    const fill = $("scanBarFill"); if (fill) (fill as HTMLElement).style.width = pct + "%";
+    const label = $("scanPercent"); if (label) label.textContent = pct + "%";
+  }
+  function refreshScanPercent() {
+    // Climb with whichever is further: real phases or the step the dealer has
+    // driven to. Hold just below 100 until we actually hand off, so the jump
+    // to 100% always coincides with the reveal.
+    const ratio = Math.max(scanCtl.phasesDone, scanCtl.activeStep) / 6;
+    setScanPercent(scanCtl.advanced ? 100 : Math.min(96, ratio * 100));
+  }
 
-    const cityLabel = state.city || "your area";
-    setStep(1, "active", cityLabel.toUpperCase());
-    const cityLine = state.city
-      ? `Trade area locked in — ${state.city}.`
-      : `Couldn't pin the city from your site, so I'm going on neutral trade-area math.`;
-    const makeLine = state.make !== "automotive"
-      ? ` Looks like a ${state.make.charAt(0).toUpperCase() + state.make.slice(1)} store.`
-      : "";
-    setSpeech(`${cityLine}${makeLine} Now let's see who's playing for the same shoppers.`);
-    await wait(1200);
-    finishStep(1, cityLabel);
+  // Background pipeline reports a finished phase: record its detail, bump the
+  // counter, finish it visually if the highlight already passed it, then try
+  // to drain the compute steps + finish.
+  function reportPhase(idx: number, detail: string) {
+    scanCtl.stepDetail[idx] = detail;
+    scanCtl.phasesDone = Math.max(scanCtl.phasesDone, idx + 1);
+    if (idx < scanCtl.activeStep) scanCtl.stepDone[idx] = true;
+    refreshScanPercent();
+    renderScanSteps();
+    drainComputeSteps();
+  }
 
-    setStep(2, "active", "querying SERPs…");
-    const competitorPromise = discoverCompetitors(state.make, state.city, state.url);
-    setStep(3, "active", "scanning…");
-    const yourScoresPromise = computeAlgoScores(state.url);
-
-    const competitors = await competitorPromise;
-    state.competitorUrls = competitors;
-    if (competitors.length === 0) {
-      const seedHosts = [
-        `${state.make}of${state.city.split(",")[0].replace(/\s+/g, "").toLowerCase()}.com`,
-        `${state.city.split(",")[0].replace(/\s+/g, "").toLowerCase()}${state.make}.com`,
-        `north${state.make}.com`,
-      ];
-      state.competitorUrls = seedHosts.map((h) => "https://" + h);
-      finishStep(2, `${state.competitorUrls.length} found · estimated`);
-      setSpeech(`Search engines were stingy today — I'm running on estimated rooftops for your area. Real numbers come on the strategy call.`);
-    } else {
-      finishStep(2, `${competitors.length} found`);
-      setSpeech(`Got 'em. ${competitors.length} ${state.make} rooftops fighting for the same trade area as you. Now let's see who's actually winning.`);
+  // Once all three questions are answered (or skipped), walk the compute-only
+  // steps forward as their real data becomes ready.
+  function drainComputeSteps() {
+    if (answeredCount() < 3 && !scanCtl.skipped) return;
+    while (scanCtl.activeStep < 5 && scanCtl.phasesDone > scanCtl.activeStep) {
+      scanCtl.stepDone[scanCtl.activeStep] = true;
+      scanCtl.activeStep++;
     }
-    await wait(800);
+    if (scanCtl.activeStep >= 5 && scanCtl.phasesDone >= 6) scanCtl.stepDone[5] = true;
+    refreshScanPercent();
+    renderScanSteps();
+    maybeFinishScan();
+  }
 
-    let yourScores;
-    try { yourScores = await yourScoresPromise; }
-    catch { yourScores = computeAlgoScoresSeeded(state.url); }
-    state.yourScores = yourScores;
-    finishStep(3, `${yourScores.total}/60`);
+  // Dealer-driven advance for the first three steps (goal/city/rival).
+  function advanceTo(step: number) {
+    if (step <= scanCtl.activeStep) return;
+    for (let i = 0; i < step; i++) scanCtl.stepDone[i] = true;
+    scanCtl.activeStep = step;
+    refreshScanPercent();
+    renderScanSteps();
+    drainComputeSteps();
+  }
 
-    setStep(4, "active", "0 / " + state.competitorUrls.length);
-    const compResults: any[] = [];
-    let done = 0;
-    await Promise.all(state.competitorUrls.map(async (u: string) => {
-      const scores = await computeAlgoScores(u);
-      compResults.push({ url: u, host: hostnameOf(u), scores });
-      done++;
-      setStep(4, "active", `${done} / ${state.competitorUrls.length}`);
-    }));
-    compResults.sort((a, b) => b.scores.total - a.scores.total);
-    state.competitorScores = compResults;
-    finishStep(4, `${compResults.length} scored`);
-
-    setStep(5, "active", "crunching…");
-    setSpeech(`Now for the part that stings — let me calculate what these rankings are costing you every month.`);
-    await wait(1200);
-    const dmg = calculateDamage(state.yourScores, state.competitorScores);
-    state.monthlyDamage = dmg.damage;
-    state.monthlyLostLeads = dmg.lostLeads;
-    state.monthlyLostClicks = dmg.lostClicks;
-    state.yourEstimatedRank = dmg.yourRank;
-    state.damageDetail = dmg;
-    finishStep(5, `$${dmg.damage.toLocaleString()} / mo`);
-
-    state.scanComplete = true;
-
-    $("leadCompCount")!.textContent = String(state.competitorScores.filter((c: any) => c.scores.total > state.yourScores.total).length || state.competitorScores.length);
-    if (dmg.damage > 0) {
-      $("leadPreview")!.removeAttribute("hidden");
-      $("leadPreviewStat")!.textContent = "$" + dmg.damage.toLocaleString();
+  function maybeFinishScan() {
+    if (scanCtl.advanced) return;
+    const ready = scanCtl.phasesDone >= 6;
+    const interacted = answeredCount() >= 3 || scanCtl.skipped;
+    if (ready && interacted && scanCtl.activeStep >= 5 && scanCtl.stepDone[5]) {
+      scanCtl.advanced = true;
+      setScanPercent(100);
+      setSpeech("Audit's locked. The breakdown's not pretty in spots, but every gap is fixable. Here's where you stand.");
+      setTimeout(goAfterScan, 700);
     }
+  }
 
-    setSpeech(`Audit's locked. The breakdown's not pretty in spots but every one of these is fixable. Drop your info — I'll send you the full report.`);
-    await wait(900);
+  function goAfterScan() {
     if (document.body.classList.contains("sales-view")) {
       try { renderResult(); } catch (err) { console.error("renderResult threw — falling back to minimal reveal:", err); renderResultMinimal(); }
       show("screen-result");
       return;
     }
     show("screen-leadcap");
+  }
+
+  function startScan() {
+    scanCtl.activeStep = 0;
+    scanCtl.stepDetail = ["", "", "", "", "", ""];
+    scanCtl.stepDone = [false, false, false, false, false, false];
+    scanCtl.phasesDone = 0;
+    scanCtl.goalDone = scanCtl.cityDone = scanCtl.rivalDone = false;
+    scanCtl.chipStage = null;
+    scanCtl.skipped = false;
+    scanCtl.advanced = false;
+
+    // Reset the interactive UI for a fresh run (matters when re-auditing).
+    document.querySelectorAll(".goal-card").forEach((c) => c.classList.remove("selected"));
+    $("goalBlock")?.removeAttribute("hidden");
+    const goalConfirm = $("goalConfirm");
+    if (goalConfirm) { goalConfirm.textContent = ""; goalConfirm.setAttribute("hidden", ""); }
+    $("chipBlock")?.setAttribute("hidden", "");
+    const chipRow = $("chipRow"); if (chipRow) chipRow.innerHTML = "";
+
+    setScanPercent(0);
+    renderScanSteps();
+    state.scanComplete = false;
+    setSpeech(`Give me a second — I'm pulling up ${hostnameOf(state.url)}. While I dig, help me aim this thing: what's your #1 goal?`);
+    runBackgroundPipeline();
+  }
+
+  // The real audit work — unchanged logic, just decoupled from the visual
+  // step pacing. Each phase reports its result as soon as it's ready.
+  async function runBackgroundPipeline() {
+    await Promise.race([state.extractPromise ?? Promise.resolve(), wait(1200)]);
+    await state.extractPromise?.catch(() => {});
+    reportPhase(0, hostnameOf(state.url));
+
+    // Trade area — reflects the dealer's chip answer if they've already given
+    // one, otherwise the extracted city (or neutral).
+    reportPhase(1, state.city || "neutral");
+
+    let competitors: string[] = [];
+    try { competitors = await discoverCompetitors(state.make, state.city, state.url); }
+    catch (err) { console.warn("competitor discovery failed:", err); }
+    if (!competitors.length) {
+      const slug = (state.city ? state.city.split(",")[0] : "").replace(/\s+/g, "").toLowerCase();
+      state.competitorUrls = [
+        `${state.make}of${slug || "yourtown"}.com`,
+        `${slug || "yourcity"}${state.make}.com`,
+        `north${state.make}.com`,
+      ].map((h) => "https://" + h);
+      reportPhase(2, `${state.competitorUrls.length} found · estimated`);
+    } else {
+      state.competitorUrls = competitors;
+      reportPhase(2, `${competitors.length} found`);
+    }
+
+    let yourScores;
+    try { yourScores = await computeAlgoScores(state.url); }
+    catch { yourScores = computeAlgoScoresSeeded(state.url); }
+    state.yourScores = yourScores;
+    reportPhase(3, `${yourScores.total}/60`);
+
+    const compResults: any[] = [];
+    await Promise.all(state.competitorUrls.map(async (u: string) => {
+      const scores = await computeAlgoScores(u);
+      compResults.push({ url: u, host: hostnameOf(u), scores });
+    }));
+    compResults.sort((a, b) => b.scores.total - a.scores.total);
+    state.competitorScores = compResults;
+    reportPhase(4, `${compResults.length} scored`);
+
+    const dmg = calculateDamage(state.yourScores, state.competitorScores);
+    state.monthlyDamage = dmg.damage;
+    state.monthlyLostLeads = dmg.lostLeads;
+    state.monthlyLostClicks = dmg.lostClicks;
+    state.yourEstimatedRank = dmg.yourRank;
+    state.damageDetail = dmg;
+    state.scanComplete = true;
+
+    $("leadCompCount")!.textContent = String(state.competitorScores.filter((c: any) => c.scores.total > state.yourScores.total).length || state.competitorScores.length);
+    const previewDamage = displayDamage(dmg.damage);
+    if (previewDamage > 0) {
+      $("leadPreview")!.removeAttribute("hidden");
+      $("leadPreviewStat")!.textContent = "$" + previewDamage.toLocaleString();
+    }
+
+    reportPhase(5, `$${displayDamage(dmg.damage).toLocaleString()} / mo`);
+    maybeFinishScan();
+  }
+
+  // ---- Interactive intro wiring (goal cards, chips, tour, skip) ----
+  function initInteractiveIntro() {
+    // b) Goal cards — single select, advances the first step.
+    document.querySelectorAll(".goal-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        if (scanCtl.advanced) return;
+        const label = card.getAttribute("data-goal") || "";
+        document.querySelectorAll(".goal-card").forEach((c) => c.classList.remove("selected"));
+        card.classList.add("selected");
+        state.goal = label;
+        const confirm = $("goalConfirm");
+        if (confirm) { confirm.textContent = `Got it — Saggy will weight your report toward ${label}.`; confirm.removeAttribute("hidden"); }
+        const first = !scanCtl.goalDone;
+        scanCtl.goalDone = true;
+        advanceTo(1);
+        if (first) setTimeout(askCity, 600);
+      });
+    });
+
+    // c) Chip answers — delegated; behaviour depends on the current stage.
+    $("chipRow")?.addEventListener("click", (e: any) => {
+      const btn = e.target.closest(".chip");
+      if (!btn || scanCtl.advanced) return;
+      const value = btn.getAttribute("data-value") || "";
+      btn.parentNode.querySelectorAll(".chip").forEach((c: any) => c.classList.remove("selected"));
+      btn.classList.add("selected");
+
+      if (scanCtl.chipStage === "city") {
+        state.city = value;
+        state.cityConfidence = "manual";
+        scanCtl.cityDone = true;
+        scanCtl.stepDetail[1] = value || "neutral";
+        advanceTo(2);
+        setSpeech(value
+          ? `${value} — got it. That sharpens the trade-area math.`
+          : `No sweat — I'll run neutral trade-area math so your number stays honest.`);
+        setTimeout(askRival, 650);
+      } else if (scanCtl.chipStage === "rival") {
+        state.rival = value;
+        scanCtl.rivalDone = true;
+        advanceTo(3);
+        setSpeech(value
+          ? `Noted — I'll show you exactly where ${value} is ahead of you.`
+          : `Fair. I'll surface whoever's actually ahead of you in the data.`);
+        const q = $("chipQuestion"); if (q) q.textContent = "That's everything Saggy needs.";
+        $("chipRow")?.querySelectorAll(".chip").forEach((c: any) => { c.disabled = true; });
+        drainComputeSteps();
+        maybeFinishScan();
+      }
+    });
+
+    // d) Quick tour — expand a one-line detail (what happens, never how).
+    document.querySelectorAll(".tour-step").forEach((step) => {
+      step.addEventListener("click", () => {
+        document.querySelectorAll(".tour-step").forEach((s) => s.classList.remove("active"));
+        step.classList.add("active");
+        const detail = $("tourDetail");
+        if (detail) detail.textContent = step.getAttribute("data-detail") || "";
+      });
+    });
+
+    // f) Skip — graceful fallback to neutral defaults, never blocks.
+    $("scanSkip")?.addEventListener("click", skipIntro);
+  }
+
+  function askCity() {
+    if (scanCtl.advanced || scanCtl.cityDone) return;
+    scanCtl.chipStage = "city";
+    $("chipBlock")?.removeAttribute("hidden");
+    const q = $("chipQuestion"); if (q) q.textContent = "Which market are you really fighting in?";
+    setSpeech("Quick one — my read on your site couldn't pin your city for sure. Which market are you really fighting in?");
+    renderChips(buildCityChips());
+  }
+  function askRival() {
+    if (scanCtl.advanced || scanCtl.rivalDone) return;
+    scanCtl.chipStage = "rival";
+    $("chipBlock")?.removeAttribute("hidden");
+    const q = $("chipQuestion"); if (q) q.textContent = "Who actually steals your deals?";
+    setSpeech("Last one — who actually steals your deals? Pick the rooftop that stings most.");
+    renderChips(buildRivalChips());
+  }
+
+  function buildCityChips(): { label: string; value: string }[] {
+    if (state.city) {
+      return [
+        { label: state.city, value: state.city },
+        { label: "A different market", value: "" },
+        { label: "Not sure", value: "" },
+      ];
+    }
+    return [
+      { label: "My main metro", value: "" },
+      { label: "More of a small town", value: "" },
+      { label: "Somewhere else", value: "" },
+    ];
+  }
+  function buildRivalChips(): { label: string; value: string }[] {
+    const chips: { label: string; value: string }[] = [];
+    (state.competitorUrls || []).slice(0, 3).forEach((u: string) => {
+      const host = hostnameOf(u);
+      chips.push({ label: host, value: host });
+    });
+    if (!chips.length) {
+      chips.push({ label: "The big franchise across town", value: "the big franchise across town" });
+      chips.push({ label: "An online seller (Carvana, etc.)", value: "an online seller" });
+    }
+    chips.push({ label: "Not sure", value: "" });
+    return chips;
+  }
+  function renderChips(chips: { label: string; value: string }[]) {
+    const row = $("chipRow");
+    if (!row) return;
+    row.innerHTML = chips.map((c) =>
+      `<button type="button" class="chip" data-value="${escapeHTML(c.value)}">${escapeHTML(c.label)}</button>`
+    ).join("");
+  }
+
+  function skipIntro() {
+    if (scanCtl.advanced) return;
+    // Unanswered questions stay at their neutral defaults (current behaviour) —
+    // a skipped intro just yields a less-personalized report, never a broken one.
+    scanCtl.skipped = true;
+    setSpeech("No problem — taking you straight to the numbers.");
+    drainComputeSteps();
+    if (scanCtl.phasesDone >= 6) {
+      maybeFinishScan();
+    } else {
+      // Background still running; hand off anyway — the reveal has fallbacks.
+      scanCtl.advanced = true;
+      setScanPercent(Math.max(scanCtl.phasesDone, 1) / 6 * 100);
+      setTimeout(goAfterScan, 300);
+    }
   }
 
   function wait(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
@@ -1500,6 +1716,7 @@ export function initAudit() {
   // Init
   updateStepIndicator("screen-landing");
   initAudioToggle();
+  initInteractiveIntro();
   document.addEventListener("visibilitychange", () => { if (document.hidden) saggyStop(); });
   window.addEventListener("beforeunload", saggyStop);
 }
