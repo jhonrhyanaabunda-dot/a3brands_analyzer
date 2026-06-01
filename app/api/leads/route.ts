@@ -79,6 +79,8 @@ export async function POST(req: Request) {
       url: s(body.url, 1000),
       city: s(body.city, 200),
       make: s(body.make, 80),
+      goal: s(body.goal, 200),
+      rival: s(body.rival, 200),
       estimatedRank: num(body.estimatedRank),
       monthlyDamage: num(body.monthlyDamage),
       monthlyLostLeads: num(body.monthlyLostLeads),

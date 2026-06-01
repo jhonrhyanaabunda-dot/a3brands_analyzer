@@ -40,6 +40,9 @@ export function initAudit() {
 
   const state: any = {
     url: "", city: "", cityConfidence: null, make: "",
+    // Captured on the interactive intro (Stage 2). Default to "" so a skipped
+    // intro just yields a less-personalized report — never a broken one.
+    goal: "", rival: "",
     competitorUrls: [], yourScores: null, competitorScores: [],
     monthlyDamage: 0, monthlyLostLeads: 0, monthlyLostClicks: 0,
     yourEstimatedRank: 4,
@@ -458,6 +461,8 @@ export function initAudit() {
     state.url = url;
     state.city = "";
     state.cityConfidence = null;
+    state.goal = "";
+    state.rival = "";
     $("urlError")!.textContent = "";
 
     // Detect make from the hostname (e.g. "bmwofsouthatlanta.com" → "bmw").
@@ -685,6 +690,8 @@ export function initAudit() {
       city: state.city,
       cityConfidence: state.cityConfidence ?? undefined,
       make: state.make,
+      goal: state.goal,
+      rival: state.rival,
       yourScores: state.yourScores,
       competitorScores: state.competitorScores.map((c: any) => ({ host: c.host, ...c.scores })),
       estimatedRank: state.yourEstimatedRank,

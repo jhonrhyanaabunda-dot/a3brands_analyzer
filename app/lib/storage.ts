@@ -23,6 +23,10 @@ export type Lead = {
   url: string;
   city: string;
   make: string;
+  // Captured on the interactive intro (Stage 2). Optional for backward compat
+  // with rows written before these columns existed.
+  goal?: string;
+  rival?: string;
   // Sales-side QA hint: did the user confirm an auto-extracted city, edit
   // one, or type from scratch? Optional for backward compat with old rows.
   cityConfidence?: "high" | "mid" | "low" | "manual";
@@ -48,6 +52,8 @@ type Row = {
   url: string;
   city: string;
   make: string;
+  goal: string | null;
+  rival: string | null;
   city_confidence: Lead["cityConfidence"] | null;
   estimated_rank: number | null;
   monthly_damage: number | null;
@@ -69,6 +75,8 @@ function rowToLead(r: Row): Lead {
     url: r.url,
     city: r.city,
     make: r.make,
+    goal: r.goal ?? undefined,
+    rival: r.rival ?? undefined,
     cityConfidence: r.city_confidence ?? undefined,
     estimatedRank: r.estimated_rank,
     monthlyDamage: r.monthly_damage,
@@ -92,6 +100,8 @@ function leadToInsert(input: Omit<Lead, "id" | "ts" | "status"> & { status?: Lea
     url: input.url,
     city: input.city,
     make: input.make,
+    goal: input.goal ?? null,
+    rival: input.rival ?? null,
     city_confidence: input.cityConfidence ?? null,
     estimated_rank: input.estimatedRank,
     monthly_damage: input.monthlyDamage,
