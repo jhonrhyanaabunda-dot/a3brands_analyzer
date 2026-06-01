@@ -124,62 +124,11 @@ export default function Page() {
       </section>
 
       {/* ============ SCREEN 2: INTERACTIVE INTRO + LIVE SCAN ============ */}
-      {/* The six scan steps still run, but they advance on the dealer's taps
-          (goal → city → rival) while the real audit runs in the background —
-          no fixed-timer spinner. Left = scan progress, right = Saggy + intro. */}
+      {/* Single full-width interactive column. The six scan steps still run in
+          the background and drive the slim progress bar as the dealer taps
+          (goal → city → rival) — no separate step rail, no fixed-timer spinner. */}
       <section className="screen" id="screen-scan">
         <div className="scan-wrap">
-          {/* LEFT: live scan progress */}
-          <div className="scan-stage-card">
-            <div className="scan-eyebrow"><span className="live-dot"></span>Live audit in progress</div>
-            <h2 className="scan-title">Saggy&apos;s on the hunt.</h2>
-            <ul className="scan-steps" id="scanSteps">
-              <li className="scan-step" data-step="0">
-                <div className="step-marker">1</div>
-                <div className="step-label">Reading your site</div>
-                <div className="step-detail">—</div>
-              </li>
-              <li className="scan-step" data-step="1">
-                <div className="step-marker">2</div>
-                <div className="step-label">Mapping the trade area</div>
-                <div className="step-detail">—</div>
-              </li>
-              <li className="scan-step" data-step="2">
-                <div className="step-marker">3</div>
-                <div className="step-label">Finding competing rooftops</div>
-                <div className="step-detail">—</div>
-              </li>
-              <li className="scan-step" data-step="3">
-                <div className="step-marker">4</div>
-                <div className="step-label">Scoring your SEO · AEO · GEO</div>
-                <div className="step-detail">—</div>
-              </li>
-              <li className="scan-step" data-step="4">
-                <div className="step-marker">5</div>
-                <div className="step-label">Scoring the rooftops ahead of you</div>
-                <div className="step-detail">—</div>
-              </li>
-              <li className="scan-step" data-step="5">
-                <div className="step-marker">6</div>
-                <div className="step-label">Calculating the leak</div>
-                <div className="step-detail">—</div>
-              </li>
-            </ul>
-
-            {/* f) Background scan indicator — climbs as real work lands */}
-            <div className="scan-progress">
-              <div className="scan-progress-track">
-                <div className="scan-progress-fill" id="scanBarFill"></div>
-              </div>
-              <div className="scan-progress-meta">
-                <span id="scanPercent">0%</span>
-                <span className="scan-progress-note">Saggy&apos;s still scanning underneath this</span>
-              </div>
-              <button type="button" className="scan-skip" id="scanSkip">skip — take me straight to the audit</button>
-            </div>
-          </div>
-
-          {/* RIGHT: Saggy + interaction */}
           <aside className="intro-panel">
             {/* a) Brand intro header — niche focus is the trust signal */}
             <div className="intro-brand">
@@ -190,6 +139,18 @@ export default function Page() {
                 <div className="intro-brand-tag">Dealerships are all we do.</div>
               </div>
               <div className="intro-while">While Saggy scans…</div>
+            </div>
+
+            {/* f) Background scan indicator — climbs as real work lands */}
+            <div className="scan-progress">
+              <div className="scan-progress-track">
+                <div className="scan-progress-fill" id="scanBarFill"></div>
+              </div>
+              <div className="scan-progress-meta">
+                <span id="scanPercent">0%</span>
+                <span className="scan-progress-note">Saggy&apos;s still scanning underneath this</span>
+                <button type="button" className="scan-skip" id="scanSkip">skip — take me straight to the audit</button>
+              </div>
             </div>
 
             {/* b) Saggy + speech bubble */}
