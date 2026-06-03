@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NightSky from "./components/NightSky";
+import Meteors from "./components/Meteors";
+import Moon from "./components/Moon";
 
 export const metadata: Metadata = {
   title: "The Outrank Audit | A3 Brands",
@@ -22,7 +25,15 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <div className="sky" aria-hidden="true">
+          <Moon />
+          <span className="twinkle" />
+          <NightSky />
+          <Meteors />
+        </div>
+        {children}
+      </body>
     </html>
   );
 }
